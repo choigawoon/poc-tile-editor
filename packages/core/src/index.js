@@ -4,6 +4,7 @@
 export * from './gid.js';
 export * from './meta.js';
 export * from './tags.js';
+export * from './query.js';
 export {
   exportProject, EXPORTERS,
   exportGeneric, exportTiled, exportGodot, exportUnity,

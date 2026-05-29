@@ -6,7 +6,7 @@
   "description": "③ The example game runtime. PixiJS (WebGL) renderer; consumes a bundle, imports @poc/core for gid math.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node ../../tools/make-demo-bundle.mjs && vite build && node ../../tools/sync-dist-bundle.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

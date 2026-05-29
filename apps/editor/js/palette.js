@@ -21,12 +21,13 @@ export function initPalette(canvasEl) {
 }
 
 function scale() {
-  const ts = activeTileset();
-  if (!ts) return 1;
-  // fit width to the palette container, never below 1x
-  const wrap = canvas.parentElement;
-  const avail = wrap.clientWidth - 12;
-  return Math.max(SCALE_MIN, Math.floor(avail / ts.imageWidth) || SCALE_MIN);
+  return Math.max(SCALE_MIN, Math.min(8, state.ui.paletteZoom || 2));
+}
+
+// User-driven palette zoom (bigger tiles → clearer metadata beads).
+export function setPaletteZoom(delta) {
+  state.ui.paletteZoom = Math.max(SCALE_MIN, Math.min(8, (state.ui.paletteZoom || 2) + delta));
+  renderPalette();
 }
 
 function cellFromEvent(e) {
@@ -94,15 +95,28 @@ export function renderPalette() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
   }
 
-  // metadata markers: a dot on any tile carrying type metadata (red = solid)
+  // metadata markers: one bead per category present, top-right of the tile.
+  // red = solid · blue = has tags · green = has scalar properties
   if (ts.tiles) {
     for (const key of Object.keys(ts.tiles)) {
+      const m = ts.tiles[key];
+      const beads = [];
+      if (m.solid) beads.push('#ff5d5d');
+      if (Array.isArray(m.tags) && m.tags.length) beads.push('#4ec9ff');
+      if (Object.keys(m).some((k) => k !== 'solid' && k !== 'tags')) beads.push('#7ee787');
+      if (!beads.length) continue;
       const idx = Number(key);
       const col = idx % ts.columns, row = Math.floor(idx / ts.columns);
-      const cx = (ts.margin + col * (ts.tileWidth + ts.spacing) + ts.tileWidth) * s - 4;
-      const cy = (ts.margin + row * (ts.tileHeight + ts.spacing)) * s + 4;
-      ctx.fillStyle = ts.tiles[key].solid ? '#ff5d5d' : '#4ec9ff';
-      ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI * 2); ctx.fill();
+      const r = Math.max(2.5, s * 1.4);          // beads grow with zoom
+      const gap = r * 2 + 2;
+      let bx = (ts.margin + col * (ts.tileWidth + ts.spacing) + ts.tileWidth) * s - (r + 2);
+      const by = (ts.margin + row * (ts.tileHeight + ts.spacing)) * s + (r + 2);
+      for (const color of beads) {
+        ctx.fillStyle = color;
+        ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        bx -= gap;
+      }
     }
   }
 

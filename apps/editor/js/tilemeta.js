@@ -14,6 +14,11 @@ import { normalizeTag, expandTag } from '@poc/core';
 // free-form key/value list below.
 const RESERVED = new Set(['solid', 'tags']);
 
+// Canonical stored form for identifiers (tag paths, property keys): normalized
+// + lowercase. Matching is already case-insensitive; storing lowercase keeps
+// the data unambiguous. Values are left as the user typed them.
+const canon = (s) => normalizeTag(s).toLowerCase();
+
 let host;
 
 export function initTileMeta(hostEl) {
@@ -114,7 +119,7 @@ export function render() {
   solidLabel.append(solidBox, document.createTextNode(' Solid (blocks movement)'));
   host.appendChild(solidLabel);
 
-  // hierarchical gameplay tags (chips + autocomplete from the project registry)
+  // hierarchical gameplay tags: assigned chips + a tree of the taxonomy
   host.appendChild(tagWidget(ts, indices));
 
   // free-form custom properties (union of keys across the selection)
@@ -159,12 +164,12 @@ function registry() {
 function registerTag(tag) {
   const reg = registry();
   let added = false;
-  for (const a of expandTag(tag)) if (!reg.includes(a)) { reg.push(a); added = true; }
+  for (const a of expandTag(canon(tag))) if (!reg.includes(a)) { reg.push(a); added = true; }
   if (added) reg.sort((x, y) => x.localeCompare(y));
 }
 
 function addTag(raw) {
-  const tag = normalizeTag(raw);
+  const tag = canon(raw);
   if (!tag) return;
   writeAll((m) => {
     const list = Array.isArray(m.tags) ? m.tags.slice() : [];
@@ -184,6 +189,8 @@ function removeTag(tag) {
   });
 }
 
+const collapsed = new Set(); // tree node full-paths currently collapsed
+
 function tagWidget(ts, indices) {
   const wrap = document.createElement('div');
   wrap.className = 'tag-widget';
@@ -193,20 +200,37 @@ function tagWidget(ts, indices) {
   lbl.textContent = 'Tags';
   wrap.appendChild(lbl);
 
+  const hint = document.createElement('div');
+  hint.className = 'tag-hint';
+  hint.textContent = '☑ tag stored on tile · • parent auto-matched via a child';
+  wrap.appendChild(hint);
+
+  // assigned-tags summary chips (quick remove). A tile holds many tags.
   const tags = shared(ts, indices, 'tags');
   const chips = document.createElement('div');
   chips.className = 'tag-chips';
   if (tags === undefined) {
-    const note = document.createElement('span');
-    note.className = 'tag-mixed';
-    note.textContent = 'tiles differ';
-    chips.appendChild(note);
-  } else if (Array.isArray(tags)) {
+    chips.appendChild(mutedSpan('tiles differ — ◪ marks partial in tree'));
+  } else if (Array.isArray(tags) && tags.length) {
     for (const t of tags) chips.appendChild(chip(t));
+  } else {
+    chips.appendChild(mutedSpan('no tags'));
   }
   wrap.appendChild(chips);
 
-  // input with native datalist autocomplete from the registry
+  // hierarchy tree: project registry ∪ every tag assigned in the selection.
+  // Check a node to assign that tag to all selected tiles; per-node actions
+  // add a child, rename (cascades), or delete the tag from the taxonomy.
+  const paths = new Set(registry());
+  for (const idx of indices) for (const t of (metaOf(ts, idx)?.tags || [])) paths.add(t);
+  const tree = document.createElement('div');
+  tree.className = 'tag-tree';
+  const roots = buildTree([...paths]);
+  if (roots.length) for (const node of roots) tree.appendChild(treeNode(node, ts, indices, 0));
+  else tree.appendChild(mutedSpan('no tags yet — add one below'));
+  wrap.appendChild(tree);
+
+  // quick-add: assigns a (possibly deep) tag to the selection + registers it
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'tag-input';
@@ -228,6 +252,204 @@ function tagWidget(ts, indices) {
 
   if (keepTagFocus) { keepTagFocus = false; setTimeout(() => input.focus(), 0); }
   return wrap;
+}
+
+function mutedSpan(text) {
+  const s = document.createElement('span');
+  s.className = 'tag-mixed';
+  s.textContent = text;
+  return s;
+}
+
+// One tree row + its (recursively rendered) children when expanded.
+function treeNode(node, ts, indices, depth) {
+  const box = document.createElement('div');
+  const row = document.createElement('div');
+  row.className = 'tag-node';
+  row.style.paddingLeft = (4 + depth * 12) + 'px';
+
+  const hasChildren = node.children.length > 0;
+  const exp = document.createElement('button');
+  exp.className = 'tag-exp' + (hasChildren ? '' : ' leaf');
+  exp.textContent = hasChildren ? (collapsed.has(node.full) ? '▸' : '▾') : '·';
+  if (hasChildren) exp.onclick = () => {
+    collapsed.has(node.full) ? collapsed.delete(node.full) : collapsed.add(node.full);
+    emit('selection:change');
+  };
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  const st = assignState(ts, indices, node.full);
+  cb.checked = st === 'on';
+  cb.indeterminate = st === 'mixed';
+  cb.title = 'Assign the exact tag "' + node.full + '" to the selected tile(s)';
+  cb.onchange = () => assignTag(node.full, cb.checked);
+
+  const seg = document.createElement('span');
+  seg.className = 'tag-seg';
+  seg.textContent = node.seg;
+  seg.title = node.full;
+
+  // "implied": not explicitly set here, but a descendant tag is — so this tag
+  // is auto-matched by the hierarchy (Unreal-style parent matching).
+  const implied = st === 'off' && impliedActive(ts, indices, node.full);
+  if (implied) {
+    row.classList.add('tag-implied');
+    seg.title = node.full + ' — auto-matched via a child tag';
+    const dot = document.createElement('span');
+    dot.className = 'tag-implied-mark';
+    dot.textContent = '•';
+    dot.title = 'active via a child tag (not stored here)';
+    seg.appendChild(dot);
+  }
+
+  const actions = document.createElement('span');
+  actions.className = 'tag-actions';
+  actions.append(
+    mkAction('＋', 'add child tag', () => {
+      const child = prompt(`New child under "${node.full}":`, '');
+      const norm = child && canon(child);
+      if (norm) mutateProject(() => registerTag(node.full + '.' + norm));
+    }),
+    mkAction('✎', 'rename (cascades to children + tiles)', () => {
+      const next = prompt('Rename tag (full path):', node.full);
+      if (next != null) renameTag(node.full, next);
+    }),
+    mkAction('×', 'delete from taxonomy + all tiles', () => {
+      if (confirm(`Delete "${node.full}" and its children from the taxonomy and every tile using it?`)) deleteTag(node.full);
+    }, true),
+  );
+
+  row.append(exp, cb, seg, actions);
+  box.appendChild(row);
+  if (hasChildren && !collapsed.has(node.full)) {
+    for (const child of node.children) box.appendChild(treeNode(child, ts, indices, depth + 1));
+  }
+  return box;
+}
+
+function mkAction(label, title, fn, danger = false) {
+  const b = document.createElement('button');
+  b.className = 'tag-act' + (danger ? ' danger' : '');
+  b.textContent = label; b.title = title;
+  b.onclick = (e) => { e.stopPropagation(); fn(); };
+  return b;
+}
+
+// Build a nested tree (array of root nodes) from flat full-path tags. Ancestor
+// nodes are materialized even if only a deep leaf was supplied.
+function buildTree(paths) {
+  const byFull = new Map();
+  const roots = [];
+  const ensure = (full) => {
+    if (byFull.has(full)) return byFull.get(full);
+    const segs = full.split('.');
+    const node = { seg: segs[segs.length - 1], full, children: [] };
+    byFull.set(full, node);
+    if (segs.length === 1) roots.push(node);
+    else ensure(segs.slice(0, -1).join('.')).children.push(node);
+    return node;
+  };
+  for (const p of paths) for (const a of expandTag(p)) ensure(a);
+  const sortRec = (arr) => { arr.sort((a, b) => a.seg.localeCompare(b.seg)); arr.forEach((n) => sortRec(n.children)); };
+  sortRec(roots);
+  return roots;
+}
+
+// True if no selected tile has this exact tag, but at least one has a
+// descendant of it — so the tag is auto-matched by the hierarchy.
+function impliedActive(ts, indices, path) {
+  const pre = path.toLowerCase() + '.';
+  return indices.some((idx) => (metaOf(ts, idx)?.tags || []).some((t) => t.toLowerCase().startsWith(pre)));
+}
+
+// Assignment state of one full-path tag across the selection.
+function assignState(ts, indices, path) {
+  const p = path.toLowerCase();
+  let any = false, all = true;
+  for (const idx of indices) {
+    const has = (metaOf(ts, idx)?.tags || []).some((t) => t.toLowerCase() === p);
+    any = any || has; all = all && has;
+  }
+  return all ? 'on' : any ? 'mixed' : 'off';
+}
+
+// Assign (on) or unassign (off) one exact tag across the whole selection.
+function assignTag(path, on) {
+  const tag = canon(path);
+  if (!tag) return;
+  const low = tag.toLowerCase();
+  writeAll((m) => {
+    const list = Array.isArray(m.tags) ? m.tags.slice() : [];
+    const has = list.some((t) => t.toLowerCase() === low);
+    if (on && !has) list.push(tag);
+    const next = on ? list : list.filter((t) => t.toLowerCase() !== low);
+    if (next.length) m.tags = next; else delete m.tags;
+  });
+  if (on) registerTag(tag);
+}
+
+// ---- project-wide taxonomy edits (rename / delete cascade everywhere) ----
+
+function mutateProject(fn) {
+  pushHistory();
+  fn();
+  emit('tilesets:change');
+  emit('selection:change');
+}
+
+// Run cb on every tile's tags array across all tilesets; cb returns the new
+// array (empty/undefined removes the `tags` key). Prunes emptied tiles.
+function eachTileTags(cb) {
+  for (const ts of state.project.tilesets) {
+    if (!ts.tiles) continue;
+    for (const k of Object.keys(ts.tiles)) {
+      const m = ts.tiles[k];
+      if (!Array.isArray(m.tags)) continue;
+      const next = cb(m.tags);
+      if (Array.isArray(next) && next.length) m.tags = next; else delete m.tags;
+      if (Object.keys(m).length === 0) delete ts.tiles[k];
+    }
+    if (Object.keys(ts.tiles).length === 0) delete ts.tiles;
+  }
+}
+
+function isSelfOrDesc(tag, path) {
+  const t = normalizeTag(tag).toLowerCase(), p = path.toLowerCase();
+  return t === p || t.startsWith(p + '.');
+}
+function rewritePrefix(tag, oldP, newP) {
+  const t = normalizeTag(tag);
+  if (t.toLowerCase() === oldP.toLowerCase()) return newP;
+  if (t.toLowerCase().startsWith(oldP.toLowerCase() + '.')) return newP + t.slice(oldP.length);
+  return t;
+}
+function dedupe(list) {
+  const out = [];
+  for (const t of list) if (!out.some((x) => x.toLowerCase() === t.toLowerCase())) out.push(t);
+  return out;
+}
+
+// Rename a tag (and its whole subtree) across the registry AND every tile.
+function renameTag(oldPathRaw, newPathRaw) {
+  const oldP = canon(oldPathRaw), newP = canon(newPathRaw);
+  if (!oldP || !newP || oldP === newP) return;
+  mutateProject(() => {
+    const set = new Set();
+    for (const t of registry()) for (const a of expandTag(rewritePrefix(t, oldP, newP))) set.add(a);
+    state.project.tagRegistry = [...set].sort((a, b) => a.localeCompare(b));
+    eachTileTags((tags) => dedupe(tags.map((t) => rewritePrefix(t, oldP, newP))));
+  });
+}
+
+// Delete a tag and its subtree from the registry and every tile.
+function deleteTag(pathRaw) {
+  const p = normalizeTag(pathRaw);
+  if (!p) return;
+  mutateProject(() => {
+    state.project.tagRegistry = registry().filter((t) => !isSelfOrDesc(t, p));
+    eachTileTags((tags) => tags.filter((t) => !isSelfOrDesc(t, p)));
+  });
 }
 
 function chip(tag) {
@@ -256,7 +478,7 @@ function propRow(key, value, fresh = false) {
 
   let prevKey = key;
   const commit = () => {
-    const nk = k.value.trim();
+    const nk = k.value.trim().toLowerCase();
     if (!nk) return;
     writeAll((m) => {
       if (prevKey && prevKey !== nk) delete m[prevKey];

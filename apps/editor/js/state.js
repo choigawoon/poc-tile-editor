@@ -39,12 +39,13 @@ export function createProject(opts = {}) {
 
 // A small starter taxonomy so tag autocomplete isn't empty and teaches the
 // dot-hierarchy format. Users extend it freely just by typing new tags.
+// Stored lowercase: the editor canonicalizes all tags/keys to lowercase.
 const STARTER_TAGS = [
-  'Terrain.Ground', 'Terrain.Water', 'Terrain.Wall',
-  'Surface.Grass', 'Surface.Sand', 'Surface.Ice', 'Surface.Mud',
-  'Hazard.Lava', 'Hazard.Spikes', 'Hazard.Drown',
-  'Movement.Blocked', 'Movement.Slow',
-  'Trigger.Door', 'Trigger.Switch', 'Trigger.Teleport',
+  'terrain.ground', 'terrain.water', 'terrain.wall',
+  'surface.grass', 'surface.sand', 'surface.ice', 'surface.mud',
+  'hazard.lava', 'hazard.spikes', 'hazard.drown',
+  'movement.blocked', 'movement.slow',
+  'trigger.door', 'trigger.switch', 'trigger.teleport',
 ];
 
 export function makeLayer(name, cellCount, id) {
@@ -69,6 +70,7 @@ export const state = {
     selection: null, // { tilesetId, col, row, w, h }
     showGrid: true,
     camera: { x: 0, y: 0, zoom: 1 },
+    paletteZoom: 2, // integer px-scale for the palette (bigger = clearer beads)
     nextLayerId: 1,
   },
 };

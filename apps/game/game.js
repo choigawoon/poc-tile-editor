@@ -9,7 +9,7 @@
 //  and this exact code renders a different world.
 // ─────────────────────────────────────────────────────────────────────────
 import { Application, Texture, Rectangle, Sprite, Container, Graphics } from 'pixi.js';
-import { tileSrcRect, gidMeta, gidHasTag, tileTags } from '@poc/core';
+import { tileSrcRect, gidMeta, gidHasTag, cellTags, cellHasTag } from '@poc/core';
 import { loadBundleFromUrl, loadInlineBundle, loadImage, resolveCell } from './bundle.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -125,21 +125,12 @@ export async function createGame(canvas, hud) {
     return !!(solidGrid && solidGrid[cy * map.width + cx]);
   }
 
-  // Merged gameplay tags of every tile stacked on a cell (across layers). The
-  // game's runtime read path for tile classification — e.g. damage on
-  // tagsAt(cx,cy).some(t => t.startsWith('Hazard')). Exposed on window.__game.
-  function tagsAt(cx, cy) {
-    const m = state.map;
-    if (!m || cx < 0 || cy < 0 || cx >= m.width || cy >= m.height) return [];
-    const out = new Set();
-    for (const layer of m.layers) {
-      const gid = layer.data[cy][cx];
-      if (!gid) continue;
-      const info = resolveCell(gid, m.tilesets);
-      if (info) for (const t of tileTags(info.ts, info.local)) out.add(t);
-    }
-    return [...out];
-  }
+  // Runtime tile-tag queries come straight from the shared SDK (@poc/core):
+  //   tagsAt(cx,cy)          → merged tags on a cell across layers
+  //   hasTagAt(cx,cy,'hazard') → hierarchy-aware match (exact or descendant)
+  // e.g. damage when hasTagAt(px,py,'hazard'). Exposed on window.__game.
+  const tagsAt = (cx, cy) => cellTags(state.map, cx, cy);
+  const hasTagAt = (cx, cy, query) => cellHasTag(state.map, cx, cy, query);
   function blocked(nx, ny) {
     const { p, TW, TH } = state;
     const x0 = Math.floor(nx / TW), x1 = Math.floor((nx + p.w - 1) / TW);
@@ -230,7 +221,7 @@ export async function createGame(canvas, hud) {
     updateHud();
 
     // expose for inspection/testing
-    window.__game = { map: state.map, player: state.p, camera: state.camera, solid, tagsAt, renderer: 'pixi' };
+    window.__game = { map: state.map, player: state.p, camera: state.camera, solid, tagsAt, hasTagAt, renderer: 'pixi' };
   }
 
   function resize(w, h) { app.renderer.resize(w, h); }

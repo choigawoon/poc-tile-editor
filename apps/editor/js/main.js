@@ -1,10 +1,12 @@
 // Entry point: wires DOM, canvas input, tools, shortcuts and actions together.
 import { state, on, emit } from './state.js';
 import { initRenderer, render, resizeCanvas, screenToTile, setHover, setRectPreview } from './renderer.js';
-import { initPalette, renderPalette } from './palette.js';
+import { initPalette, renderPalette, setPaletteZoom } from './palette.js';
 import { initPanels } from './panels.js';
 import { initTileMeta } from './tilemeta.js';
+import { initPanelResize } from './panel-resize.js';
 import { addTileset, fileToDataUrl } from './tileset.js';
+import { importImageAsTiles } from './import-image.js';
 import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
 import { paintAt, eraseAt, fillAt, rectFill, pickAt } from './tools.js';
 import { newProject, saveProject, loadProjectFromText } from './project.js';
@@ -28,6 +30,7 @@ const els = {
   mapCols: $('map-cols'), mapRows: $('map-rows'),
   btnResize: $('btn-resize'), chkGrid: $('chk-grid'),
   btnAddTileset: $('btn-add-tileset'), btnAddLayer: $('btn-add-layer'),
+  btnImportTiles: $('btn-import-tiles'), fileImport: $('file-import'),
   btnUndo: $('btn-undo'), btnRedo: $('btn-redo'),
   btnNew: $('btn-new'), btnSave: $('btn-save'), btnLoad: $('btn-load'),
   exportTarget: $('export-target'), btnExport: $('btn-export'),
@@ -51,6 +54,10 @@ initRenderer(els.mapCanvas);
 initPalette(els.paletteCanvas);
 initPanels(els);
 initTileMeta(els.tileMeta);
+initPanelResize(document.querySelector('.layout'), renderPalette);
+
+document.getElementById('palette-zoom-in').onclick = () => setPaletteZoom(1);
+document.getElementById('palette-zoom-out').onclick = () => setPaletteZoom(-1);
 
 // ---- render scheduling ----
 // Defined before the first-paint calls at the bottom of this section, because
@@ -263,6 +270,26 @@ els.fileImage.onchange = async () => {
   } catch (err) { alert('Could not load image: ' + err.message); }
   els.fileImage.value = '';
 };
+
+els.btnImportTiles.onclick = () => els.fileImport.click();
+els.fileImport.onchange = async () => {
+  const file = els.fileImport.files[0];
+  if (!file) return;
+  try {
+    const tw = clampInt(prompt('Tile width (px):', state.project.tileWidth), 1, 1024);
+    if (!tw) return;
+    const th = clampInt(prompt('Tile height (px):', tw), 1, 1024);
+    if (!th) return;
+    const dedupe = confirm('Merge duplicate tiles? (smaller tileset, reuses identical cells)');
+    const url = await fileToDataUrl(file);
+    const msg = await importImageAsTiles(url, file.name, { tileWidth: tw, tileHeight: th, dedupe });
+    centerCamera();
+    renderPalette();
+    flash(msg);
+  } catch (err) { alert('Import failed: ' + err.message); }
+  els.fileImport.value = '';
+};
+function clampInt(v, lo, hi) { const n = Math.round(+v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : 0; }
 
 els.btnExport.onclick = () => {
   if (!state.project.tilesets.length) { alert('Add a tileset and paint something first.'); return; }

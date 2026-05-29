@@ -43,28 +43,43 @@
       <section class="block">
         <div class="block-head">
           <span>Tilesets</span>
-          <button id="btn-add-tileset" class="mini" title="Add tileset image">＋</button>
+          <span class="zoom-ctl">
+            <button id="btn-import-tiles" class="mini" title="Import image as tiles (slice + optional dedupe)">⊞</button>
+            <button id="btn-add-tileset" class="mini" title="Add tileset image">＋</button>
+          </span>
         </div>
         <select id="tileset-select" class="full"></select>
         <div class="tileset-meta" id="tileset-meta"></div>
       </section>
       <section class="block grow">
-        <div class="block-head"><span>Palette</span></div>
+        <div class="block-head">
+          <span>Palette</span>
+          <span class="zoom-ctl">
+            <button id="palette-zoom-out" class="mini" title="Zoom out">−</button>
+            <button id="palette-zoom-in" class="mini" title="Zoom in">＋</button>
+          </span>
+        </div>
         <div class="palette-wrap" id="palette-wrap">
           <canvas id="palette-canvas"></canvas>
         </div>
       </section>
-      <section class="block">
+      <section class="block tile-block">
         <div class="block-head"><span>Selected tile</span></div>
         <div id="tile-meta"></div>
       </section>
     </aside>
+
+    <!-- drag to resize the left panel -->
+    <div class="resizer" data-resize="left" title="Drag to resize"></div>
 
     <!-- Center: map canvas -->
     <section class="stage" id="stage">
       <canvas id="map-canvas"></canvas>
       <div class="stage-hud" id="stage-hud">0, 0</div>
     </section>
+
+    <!-- drag to resize the right panel -->
+    <div class="resizer" data-resize="right" title="Drag to resize"></div>
 
     <!-- Right: layers & map props -->
     <aside class="panel right">
@@ -88,6 +103,7 @@
   </main>
 
   <input type="file" id="file-image" accept="image/*" hidden />
+  <input type="file" id="file-import" accept="image/*" hidden />
   <input type="file" id="file-project" accept=".json,application/json" hidden />
 
   <!-- ▶Play: embeds the game runtime and feeds it the live map as a bundle -->

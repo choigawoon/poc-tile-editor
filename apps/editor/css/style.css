@@ -42,12 +42,14 @@ button.primary:hover { background: var(--accent); }
 button.mini { padding: 1px 7px; line-height: 1; }
 button:disabled { opacity: .4; cursor: not-allowed; }
 
-select, input[type="number"] {
+select, input:not([type="checkbox"]) {
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 4px 6px;
+  color: var(--text);
 }
+input::placeholder { color: var(--muted); }
 .full { width: 100%; }
 
 /* Topbar */
@@ -72,10 +74,10 @@ select, input[type="number"] {
 .actions { display: flex; align-items: center; gap: 6px; }
 .actions .sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
 
-/* Layout */
+/* Layout — side panel widths are CSS vars so the resizers can reflow the grid */
 .layout {
   display: grid;
-  grid-template-columns: 240px 1fr 220px;
+  grid-template-columns: var(--left-w, 240px) 5px 1fr 5px var(--right-w, 220px);
   height: calc(100% - 46px);
 }
 .panel {
@@ -83,9 +85,19 @@ select, input[type="number"] {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 .panel.left { border-right: 1px solid var(--border); }
 .panel.right { border-left: 1px solid var(--border); }
+
+/* drag handles between panels and the stage */
+.resizer { background: transparent; cursor: col-resize; }
+.resizer:hover, .resizer.active { background: var(--accent); }
+
+/* the selected-tile editor can be tall (tag tree + props) — let it scroll
+   inside the panel instead of being clipped, while the palette keeps its space */
+.tile-block { flex: 0 1 auto; max-height: 46%; overflow-y: auto; overflow-x: hidden; }
+#tile-meta { min-width: 0; }
 
 .block {
   padding: 10px;
@@ -103,10 +115,15 @@ select, input[type="number"] {
   display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
 }
 .field label { width: 48px; color: var(--muted); }
-.field input { flex: 1; }
+/* min-width:0 lets flex inputs shrink to fit instead of overflowing (which
+   clipped the property "value" field inside the narrow panel) */
+.field input { flex: 1; min-width: 0; }
+.meta-row input { min-width: 0; }
 .check { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--muted); }
-.meta-row .meta-key { flex: 0 0 36%; }
-.meta-row .lbtn { padding: 1px 6px; font-size: 12px; }
+.meta-row { gap: 4px; align-items: center; }
+.meta-row .meta-key { flex: 1 1 38%; min-width: 0; }
+.meta-row .meta-val { flex: 1 1 62%; min-width: 0; }
+.meta-row .lbtn { flex: 0 0 auto; padding: 1px 6px; font-size: 12px; }
 
 /* gameplay tags */
 .tag-widget { margin: 8px 0; }
@@ -123,6 +140,27 @@ select, input[type="number"] {
 .tag-mixed { color: var(--muted); font-size: 11px; font-style: italic; }
 .tag-input { width: 100%; }
 
+/* tag hierarchy tree */
+.tag-tree {
+  max-height: 220px; overflow: auto;
+  background: #15161b; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 2px 0; margin-bottom: 6px; font-size: 12px;
+}
+.tag-node { display: flex; align-items: center; gap: 4px; padding: 1px 4px; border-radius: 3px; }
+.tag-node:hover { background: var(--panel-2); }
+.tag-exp { border: 0; background: none; color: var(--muted); cursor: pointer; width: 14px; padding: 0; font-size: 10px; }
+.tag-exp.leaf { cursor: default; color: #444; }
+.tag-node input[type=checkbox] { margin: 0; }
+.tag-seg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag-actions { display: none; gap: 2px; }
+.tag-node:hover .tag-actions { display: inline-flex; }
+.tag-act { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 3px; font-size: 12px; line-height: 1; }
+.tag-act:hover { color: var(--accent); }
+.tag-act.danger:hover { color: #ff5d5d; }
+.tag-hint { color: var(--muted); font-size: 10px; margin-bottom: 4px; }
+.tag-implied .tag-seg { color: var(--accent); font-style: italic; }
+.tag-implied-mark { color: var(--accent); margin-left: 4px; }
+
 /* Palette */
 .palette-wrap {
   flex: 1; min-height: 0; overflow: auto;
@@ -130,6 +168,7 @@ select, input[type="number"] {
   padding: 4px;
 }
 #palette-canvas { display: block; image-rendering: pixelated; cursor: crosshair; }
+.zoom-ctl { display: inline-flex; gap: 4px; }
 
 /* Stage */
 .stage {

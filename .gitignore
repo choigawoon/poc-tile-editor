@@ -9,6 +9,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Turborepo cache
+.turbo/
+
 # Exported artifacts produced at runtime
 /exports/
 *.tileproj.json

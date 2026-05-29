@@ -3,22 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@10.9.4",
   "description": "Tile pipeline monorepo: editor (tool) + game (runtime) + shared core, joined by bundles.",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @poc/editor",
-    "dev:editor": "npm run dev -w @poc/editor",
-    "dev:game": "npm run dev -w @poc/game",
-    "build": "npm run build:all",
-    "build:all": "npm run build:editor && npm run build:game",
-    "build:editor": "npm run build -w @poc/editor",
-    "build:game": "npm run bundle:demo && npm run build -w @poc/game && node tools/sync-dist-bundle.mjs",
-    "preview:editor": "npm run preview -w @poc/editor",
-    "preview:game": "npm run preview -w @poc/game",
+    "dev": "turbo run dev --filter=@poc/editor",
+    "dev:editor": "turbo run dev --filter=@poc/editor",
+    "dev:game": "turbo run dev --filter=@poc/game",
+    "dev:all": "turbo run dev",
+    "build": "turbo run build",
+    "build:all": "turbo run build",
+    "build:editor": "turbo run build --filter=@poc/editor",
+    "build:game": "turbo run build --filter=@poc/game",
+    "preview:editor": "turbo run preview --filter=@poc/editor",
+    "preview:game": "turbo run preview --filter=@poc/game",
     "bundle:demo": "node tools/make-demo-bundle.mjs",
     "tileset:sample": "node tools/make-sample-tileset.js"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
   }
 }
