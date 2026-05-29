@@ -237,17 +237,24 @@ function mousePos(e) {
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
-// zoom toward cursor
+// Figma-style, trackpad-friendly: pinch (browsers send it as ctrl+wheel) or
+// ⌘/Ctrl+scroll → zoom toward the cursor; plain scroll / two-finger drag → pan.
+// (Plain wheel and trackpad two-finger scroll are indistinguishable, so both
+// pan; hold ⌘/Ctrl to zoom with a mouse wheel. Space-drag still pans too.)
 els.mapCanvas.addEventListener('wheel', (e) => {
   e.preventDefault();
   const cam = state.ui.camera;
-  const local = mousePos(e);
-  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-  const newZoom = Math.max(0.1, Math.min(8, cam.zoom * factor));
-  // keep the point under the cursor stationary
-  cam.x = local.x - (local.x - cam.x) * (newZoom / cam.zoom);
-  cam.y = local.y - (local.y - cam.y) * (newZoom / cam.zoom);
-  cam.zoom = newZoom;
+  if (e.ctrlKey || e.metaKey) {
+    const local = mousePos(e);
+    const factor = Math.exp(-e.deltaY * 0.01); // smooth, continuous
+    const newZoom = Math.max(0.1, Math.min(8, cam.zoom * factor));
+    cam.x = local.x - (local.x - cam.x) * (newZoom / cam.zoom);
+    cam.y = local.y - (local.y - cam.y) * (newZoom / cam.zoom);
+    cam.zoom = newZoom;
+  } else {
+    cam.x -= e.deltaX;
+    cam.y -= e.deltaY;
+  }
   requestRender();
 }, { passive: false });
 
