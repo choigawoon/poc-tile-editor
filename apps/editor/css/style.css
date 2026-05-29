@@ -130,6 +130,9 @@ input::placeholder { color: var(--muted); }
 .dock-floating .block-head, .dock-dragging .block-head { cursor: move; position: sticky; top: 0; background: var(--panel); z-index: 1; }
 .block-head { cursor: grab; }
 .dock-indicator { height: 3px; background: var(--accent); border-radius: 2px; margin: 3px 0; pointer-events: none; }
+/* drop targets shown while dragging a panel */
+.panel.dock-drop-zone { box-shadow: inset 0 0 0 2px rgba(91, 156, 255, .35); }
+.panel.dock-drop-active { box-shadow: inset 0 0 0 2px var(--accent); background: rgba(91, 156, 255, .07); }
 .tileset-meta { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 .field {
@@ -164,7 +167,17 @@ input::placeholder { color: var(--muted); }
 /* AI tileset panel */
 .genai-presets { margin-bottom: 6px; }
 .genai-prompt { width: 100%; resize: vertical; margin-bottom: 6px; font-family: inherit; }
-.genai-prev { width: 100%; image-rendering: pixelated; border: 1px solid var(--border); border-radius: var(--radius); margin: 6px 0; }
+.genai-grid { display: flex; gap: 6px; margin-bottom: 4px; }
+.genai-num { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: var(--muted); }
+.genai-num input { width: 100%; }
+.genai-pvwrap { position: relative; margin: 6px 0; cursor: pointer; }
+.genai-prev { width: 100%; display: block; image-rendering: pixelated; border: 1px solid var(--border); border-radius: var(--radius); }
+.genai-grid-overlay {
+  position: absolute; inset: 0; pointer-events: none; border-radius: var(--radius);
+  background-image:
+    linear-gradient(to right, rgba(91,156,255,.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(91,156,255,.55) 1px, transparent 1px);
+}
 .genai-actions { display: flex; flex-direction: column; gap: 4px; }
 
 /* tag hierarchy tree */

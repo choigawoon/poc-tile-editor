@@ -9,7 +9,7 @@
 // persisted per panel.
 const KEY = 'poc-editor-dock:v2';
 
-let zones, byId = {}, layout, indicator, dragging = null, dropTarget = null;
+let zones, byId = {}, home = {}, layout, indicator, dragging = null, dropTarget = null;
 
 export function initDock(root = document) {
   zones = { left: root.querySelector('.panel.left'), right: root.querySelector('.panel.right') };
@@ -21,7 +21,10 @@ export function initDock(root = document) {
   indicator = document.createElement('div');
   indicator.className = 'dock-indicator';
 
-  layout = mergeLayout(load(), defaultLayout());
+  const def = defaultLayout();
+  home = {};
+  for (const z of ['left', 'right']) for (const id of def.docks[z]) home[id] = z;
+  layout = mergeLayout(load(), def);
 
   for (const sec of panels) {
     const head = sec.querySelector('.block-head');
@@ -111,7 +114,7 @@ function toggleFloat(sec) {
   const id = sec.dataset.dock;
   if (sec.classList.contains('dock-floating')) {
     removeFromLayout(id);
-    layout.docks.left.push(id); // dock-back lands at the bottom of the left column
+    layout.docks[home[id] || 'left'].push(id); // dock back to its original column
   } else {
     const r = sec.getBoundingClientRect();
     removeFromLayout(id);
@@ -132,6 +135,8 @@ function onDragStart(e, sec) {
   sec.classList.add('dock-dragging');
   document.body.appendChild(sec);
   Object.assign(sec.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: Math.min(r.height, 360) + 'px' });
+  zones.left.classList.add('dock-drop-zone');
+  zones.right.classList.add('dock-drop-zone');
 
   const move = (ev) => {
     sec.style.left = (ev.clientX - offX) + 'px';
@@ -157,6 +162,8 @@ function zoneAt(x, y) {
 
 function updateDrop(x, y) {
   const z = zoneAt(x, y);
+  zones.left.classList.toggle('dock-drop-active', z === 'left');
+  zones.right.classList.toggle('dock-drop-active', z === 'right');
   if (!z) { indicator.remove(); dropTarget = null; return; }
   const zoneEl = zones[z];
   const sibs = [...zoneEl.querySelectorAll(':scope > .dock-panel')];
@@ -170,6 +177,7 @@ function updateDrop(x, y) {
 }
 
 function finishDrop(sec) {
+  for (const z of ['left', 'right']) zones[z].classList.remove('dock-drop-zone', 'dock-drop-active');
   indicator.remove();
   sec.classList.remove('dock-dragging');
   const id = sec.dataset.dock;
