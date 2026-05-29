@@ -9,6 +9,7 @@
 <body>
   <header class="topbar">
     <div class="brand">🧩 POC Tile Editor</div>
+    <div class="menubar" id="menubar"></div>
     <div class="toolbar" id="toolbar">
       <button class="tool" data-tool="brush" title="Brush (B)">🖌️</button>
       <button class="tool" data-tool="eraser" title="Eraser (E)">🧽</button>
@@ -19,24 +20,24 @@
     </div>
     <div class="spacer"></div>
     <div class="actions">
-      <button id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
-      <button id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
-      <span class="sep"></span>
+      <button id="btn-play" class="primary" title="Play the current map (live)">▶ Play</button>
+    </div>
+
+    <!-- handlers live on these; the menu bar above proxies clicks to them -->
+    <div id="legacy-actions" hidden>
+      <button id="btn-undo">↶</button>
+      <button id="btn-redo">↷</button>
       <button id="btn-new">New</button>
       <button id="btn-save">Save</button>
       <button id="btn-load">Load</button>
-      <button id="btn-view" title="Show / hide panels">▤ Panels ▾</button>
-      <span class="sep"></span>
-      <select id="export-target" title="Export target">
+      <select id="export-target">
         <option value="generic">Generic JSON</option>
         <option value="tiled">Tiled (.tmj)</option>
         <option value="godot">Godot 4</option>
         <option value="unity">Unity</option>
       </select>
-      <button id="btn-export" class="primary">Export ⤓</button>
-      <span class="sep"></span>
-      <button id="btn-play" class="primary" title="Play the current map (live)">▶ Play</button>
-      <button id="btn-generate" title="Generate a dungeon by connecting patterns">⚄ Dungeon</button>
+      <button id="btn-export">Export</button>
+      <button id="btn-generate">⚄ Dungeon</button>
     </div>
   </header>
 

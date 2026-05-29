@@ -63,6 +63,12 @@ input::placeholder { color: var(--muted); }
   border-bottom: 1px solid var(--border);
 }
 .brand { font-weight: 600; }
+.menubar { display: flex; gap: 1px; }
+.menu-btn {
+  background: none; border: 0; color: var(--text);
+  padding: 4px 9px; border-radius: var(--radius); font-size: 13px; cursor: pointer;
+}
+.menu-btn:hover, .menu-btn.active { background: var(--panel-2); }
 .toolbar { display: flex; gap: 4px; }
 .tool {
   width: 34px; height: 30px;
