@@ -7,7 +7,7 @@ import { initTileMeta } from './tilemeta.js';
 import { initPanelResize } from './panel-resize.js';
 import { initMapTabs } from './maps.js';
 import { initDoors } from './doors.js';
-import { generateDungeon } from './pcg.js';
+import { generateDungeon, autoDungeon } from './pcg.js';
 import { initGenai } from './genai.js';
 import { initDock } from './dock.js';
 import { initMenuBar } from './menubar.js';
@@ -322,6 +322,20 @@ els.btnGenerate.onclick = () => {
     centerCamera();
     flash(`Dungeon ${cols}×${rows} rooms · ${r.mapSize[0]}×${r.mapSize[1]} tiles${r.mismatches ? ` · ${r.mismatches} door mismatch` : ''}`);
   } catch (err) { alert('Generate failed: ' + err.message); }
+};
+
+$('btn-autodungeon').onclick = () => {
+  try {
+    if (!state.workspace.tilesets.length) { alert('Add a tileset first (＋ in Tilesets).'); return; }
+    const cols = clampInt(prompt('Dungeon width (rooms):', '4'), 1, 16); if (!cols) return;
+    const rows = clampInt(prompt('Dungeon height (rooms):', '3'), 1, 16); if (!rows) return;
+    const rw = clampInt(prompt('Room width (tiles):', '7'), 3, 32); if (!rw) return;
+    const rh = clampInt(prompt('Room height (tiles):', String(rw)), 3, 32); if (!rh) return;
+    const r = autoDungeon(cols, rows, rw, rh);
+    centerCamera();
+    renderPalette();
+    flash(`Auto dungeon: ${cols}×${rows} rooms · ${r.mapSize[0]}×${r.mapSize[1]} tiles · ${r.roomTypes} room types → patterns`);
+  } catch (err) { alert('Auto dungeon failed: ' + err.message); }
 };
 
 els.btnImportTiles.onclick = () => els.fileImport.click();

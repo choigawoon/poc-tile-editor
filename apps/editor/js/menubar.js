@@ -37,7 +37,8 @@ const MENUS = [
   {
     label: 'Tools', items: () => [
       { label: 'Import image as tiles…', action: proxy('btn-import-tiles') },
-      { label: '⚄ Generate dungeon…', action: proxy('btn-generate') },
+      { label: '✨ Auto-build dungeon…', action: proxy('btn-autodungeon') },
+      { label: '⚄ Dungeon from my patterns…', action: proxy('btn-generate') },
     ],
   },
 ];
