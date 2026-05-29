@@ -107,7 +107,10 @@ export const state = {
   images: new Map(),
   ui: {
     activeTool: 'brush',
+    activeKind: 'map',        // 'map' | 'pattern' — which document is being edited
     activeMapId: 0,
+    activePatternId: null,
+    stampPatternId: null,     // pattern chosen for the stamp tool
     activeLayerId: 0,
     activeTilesetId: null,
     // selection from palette: rectangular block of local tile indices
@@ -124,15 +127,33 @@ export function activeMap() {
   return w.maps.find((m) => m.id === state.ui.activeMapId) || w.maps[0] || null;
 }
 
-// After replacing the workspace (load/undo), point the UI at a valid map/layer.
+// A pattern is a small map-shaped document (+ door metadata, P4). Patterns and
+// maps share the same shape, so the whole editor edits either one.
+export function makePattern(name, mapWidth, mapHeight, id) {
+  return { ...makeMap(name, mapWidth, mapHeight, id), doors: { n: [], e: [], s: [], w: [] } };
+}
+
+// The document currently being edited — a map or a pattern.
+export function activeDoc() {
+  if (state.ui.activeKind === 'pattern') {
+    return state.workspace.patterns.find((p) => p.id === state.ui.activePatternId) || null;
+  }
+  return activeMap();
+}
+
+// After replacing the workspace (load/undo) or switching docs, point the UI at
+// a valid document + layer.
 export function normalizeActive() {
   const w = state.workspace;
+  if (state.ui.activeKind === 'pattern' && !w.patterns.find((p) => p.id === state.ui.activePatternId)) {
+    state.ui.activeKind = 'map'; // pattern gone — fall back to maps
+  }
   if (!w.maps.find((m) => m.id === state.ui.activeMapId)) {
     state.ui.activeMapId = w.maps[0] ? w.maps[0].id : 0;
   }
-  const m = activeMap();
-  if (m && !m.layers.find((l) => l.id === state.ui.activeLayerId)) {
-    state.ui.activeLayerId = m.layers[0] ? m.layers[0].id : 0;
+  const d = activeDoc();
+  if (d && !d.layers.find((l) => l.id === state.ui.activeLayerId)) {
+    state.ui.activeLayerId = d.layers[0] ? d.layers[0].id : 0;
   }
 }
 
@@ -143,26 +164,26 @@ const SHARED = new Set(['format', 'version', 'tilesets', 'tagRegistry', 'tileWid
 const projectView = new Proxy({}, {
   get(_t, k) {
     if (SHARED.has(k)) return state.workspace[k];
-    const m = activeMap();
-    return m ? m[k] : undefined;
+    const d = activeDoc();
+    return d ? d[k] : undefined;
   },
   set(_t, k, v) {
     if (SHARED.has(k)) { state.workspace[k] = v; return true; }
-    const m = activeMap();
-    if (m) m[k] = v;
+    const d = activeDoc();
+    if (d) d[k] = v;
     return true;
   },
   has(_t, k) {
     if (SHARED.has(k)) return true;
-    const m = activeMap();
-    return m ? k in m : false;
+    const d = activeDoc();
+    return d ? k in d : false;
   },
 });
 Object.defineProperty(state, 'project', { get() { return projectView; }, configurable: true });
 
 export function activeLayer() {
-  const m = activeMap();
-  return m ? (m.layers.find((l) => l.id === state.ui.activeLayerId) || null) : null;
+  const d = activeDoc();
+  return d ? (d.layers.find((l) => l.id === state.ui.activeLayerId) || null) : null;
 }
 
 export function activeTileset() {

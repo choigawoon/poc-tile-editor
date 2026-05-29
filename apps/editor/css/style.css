@@ -197,6 +197,13 @@ input::placeholder { color: var(--muted); }
 .map-tab .mt-close { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; font-size: 13px; line-height: 1; }
 .map-tab .mt-close:hover { color: #ff5d5d; }
 .map-tabs .mt-add { padding: 1px 8px; }
+.mt-group { display: inline-flex; align-items: center; gap: 3px; }
+.mt-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-right: 2px; }
+.mt-sep { width: 1px; align-self: stretch; background: var(--border); margin: 4px 6px; }
+.map-tab.pattern { border-style: dashed; }
+.map-tab.pattern.active { border-style: solid; }
+.mt-stamp { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding-left: 8px; }
+.mt-stamp select { font-size: 11px; padding: 2px 4px; }
 .stage-hud {
   position: absolute; bottom: 8px; left: 8px;
   background: rgba(0,0,0,.55); padding: 3px 8px; border-radius: var(--radius);

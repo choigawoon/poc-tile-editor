@@ -9,7 +9,7 @@ import { initMapTabs } from './maps.js';
 import { addTileset, fileToDataUrl } from './tileset.js';
 import { importImageAsTiles } from './import-image.js';
 import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
-import { paintAt, eraseAt, fillAt, rectFill, pickAt } from './tools.js';
+import { paintAt, eraseAt, fillAt, rectFill, pickAt, stampAt } from './tools.js';
 import { newProject, saveProject, loadProjectFromText } from './project.js';
 import { runExport } from './exporters/index.js';
 import { restore, scheduleSave, clearSaved } from './persist.js';
@@ -123,8 +123,17 @@ els.toolbar.querySelectorAll('.tool').forEach((btn) => {
 });
 function setTool(tool) {
   state.ui.activeTool = tool;
+  setRectPreview(null); // clear any stamp/rect ghost when switching tools
   els.toolbar.querySelectorAll('.tool').forEach((b) =>
     b.classList.toggle('active', b.dataset.tool === tool));
+}
+
+// Stamp the chosen pattern at (col,row) onto the active map (one undo step).
+function stampHere(col, row) {
+  if (state.ui.activeKind !== 'map') { flash('Switch to a map tab to stamp'); return; }
+  if (state.ui.stampPatternId == null) { flash('Make a pattern first (Patterns ＋)'); return; }
+  pushHistory();
+  if (stampAt(col, row)) requestRender();
 }
 setTool('brush');
 
@@ -152,6 +161,7 @@ els.mapCanvas.addEventListener('mousedown', (e) => {
   const tool = state.ui.activeTool;
 
   if (tool === 'picker') { pickAt(col, row); return; }
+  if (tool === 'stamp') { stampHere(col, row); return; }
   if (tool === 'rect') { rectStart = { col, row }; setRectPreview({ x0: col, y0: row, x1: col, y1: row }); requestRender(); return; }
 
   painting = true;
@@ -173,6 +183,12 @@ window.addEventListener('mousemove', (e) => {
   }
   if (rectStart) {
     setRectPreview({ x0: rectStart.col, y0: rectStart.row, x1: col, y1: row });
+    requestRender();
+    return;
+  }
+  if (state.ui.activeTool === 'stamp') {
+    const pat = state.workspace.patterns.find((p) => p.id === state.ui.stampPatternId);
+    if (pat) setRectPreview({ x0: col, y0: row, x1: col + pat.mapWidth - 1, y1: row + pat.mapHeight - 1 });
     requestRender();
     return;
   }
@@ -230,7 +246,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { spaceDown = true; els.mapCanvas.style.cursor = 'grab'; return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
-  const map = { b: 'brush', e: 'eraser', g: 'fill', r: 'rect', i: 'picker' };
+  const map = { b: 'brush', e: 'eraser', g: 'fill', r: 'rect', i: 'picker', m: 'stamp' };
   if (map[e.key.toLowerCase()]) setTool(map[e.key.toLowerCase()]);
 });
 window.addEventListener('keyup', (e) => {

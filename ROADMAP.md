@@ -53,12 +53,15 @@ Dependency chain: `0 → 1 → 2` and `0 → 1 → 3 → 4`.
 - [ ] paint test maps across tabs, tag/meta, ▶Play (browser)
 - [ ] commit
 
-### Phase 3 — patterns (separate; place as chunks)  (needs P0, P1)
-- [ ] `workspace.patterns[]`; edit a pattern like a map (kind flag); tabs split Maps | Patterns
-- [ ] "stamp pattern" tool: blit pattern layers onto a map at an offset (layer-name matched, one undo)
-- [ ] verify + commit
+### Phase 3 — patterns (separate; place as chunks)  (DONE ✓)
+- [x] `state.project` proxy generalized to `activeDoc()` (map OR pattern) via `ui.activeKind`; patterns are map-shaped docs (+ empty `doors`) so the whole editor edits them unchanged
+- [x] tab bar split into **Maps | Patterns** groups (`maps.js`): new/switch/rename/close for each; pattern tabs dashed
+- [x] **stamp tool** (`▦`, key M): `stampAt()` blits the chosen pattern's layers onto the active map at the hovered cell — layer-name matched (missing layers created), empty cells skipped (overlay), out-of-bounds clipped, one undo; hover ghost preview; stamp-pattern picker in the tab bar
+- [x] verify: 12 Node tests (activeDoc routing, proxy→pattern, stamp offset/skip/auto-layer/clip) + build green
+- [ ] ⚠️ browser eyeball pending (tab groups, stamp preview)
+- [x] commit
 
-### Phase 4 — PCG door standardization + dungeon connect  (needs P3)
+### ▶ CURRENT — Phase 4 — PCG door standardization + dungeon connect  (needs P3)
 - [ ] pattern `doors:{n,e,s,w}` edge-slot metadata + authoring UI
 - [ ] edge compatibility rule; seeded room-grid generator placing patterns via P3 stamp
 - [ ] verify + commit
