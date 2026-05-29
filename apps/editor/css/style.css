@@ -133,6 +133,23 @@ input::placeholder { color: var(--muted); }
 /* drop targets shown while dragging a panel */
 .panel.dock-drop-zone { box-shadow: inset 0 0 0 2px rgba(91, 156, 255, .35); }
 .panel.dock-drop-active { box-shadow: inset 0 0 0 2px var(--accent); background: rgba(91, 156, 255, .07); }
+.dock-btn.dock-close:hover { color: #ff5d5d; }
+
+/* dropdown menu (Panels ▾) */
+.dropdown-menu {
+  position: fixed; z-index: 80; min-width: 180px; padding: 4px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 12px 36px rgba(0,0,0,.5);
+}
+.dropdown-menu[hidden] { display: none; }
+.dropdown-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 5px 8px; border: 0; background: none; color: var(--text);
+  font-size: 12px; text-align: left; cursor: pointer; border-radius: 4px;
+}
+.dropdown-item:hover { background: var(--panel-2); }
+.dropdown-sep { height: 1px; background: var(--border); margin: 4px 2px; }
+.dropdown-action { color: var(--muted); }
 .tileset-meta { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 .field {

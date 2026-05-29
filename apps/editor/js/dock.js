@@ -9,7 +9,12 @@
 // persisted per panel.
 const KEY = 'poc-editor-dock:v2';
 
-let zones, byId = {}, home = {}, layout, indicator, dragging = null, dropTarget = null, dragWasFloating = false;
+let zones, byId = {}, home = {}, titles = {}, initialDocks = null, layout, indicator, dragging = null, dropTarget = null, dragWasFloating = false;
+
+// notify the View menu (and anyone) when panel visibility/layout changes
+const onChange = new Set();
+export function onDockChange(fn) { onChange.add(fn); return () => onChange.delete(fn); }
+function changed() { for (const fn of onChange) fn(); }
 
 export function initDock(root = document) {
   zones = { left: root.querySelector('.panel.left'), right: root.querySelector('.panel.right') };
@@ -22,6 +27,7 @@ export function initDock(root = document) {
   indicator.className = 'dock-indicator';
 
   const def = defaultLayout();
+  initialDocks = JSON.parse(JSON.stringify(def.docks));
   home = {};
   for (const z of ['left', 'right']) for (const id of def.docks[z]) home[id] = z;
   layout = mergeLayout(load(), def);
@@ -29,15 +35,32 @@ export function initDock(root = document) {
   for (const sec of panels) {
     const head = sec.querySelector('.block-head');
     if (!head) continue;
+    titles[sec.dataset.dock] = (head.querySelector('span')?.textContent || sec.dataset.dock).trim();
     const ctl = document.createElement('span');
     ctl.className = 'dock-ctl';
     sec._collapseBtn = btn('▾', 'Collapse', () => toggleCollapse(sec));
     sec._floatBtn = btn('⤢', 'Float / dock', () => toggleFloat(sec));
-    ctl.append(sec._collapseBtn, sec._floatBtn);
+    const closeBtn = btn('✕', 'Close (reopen from Panels ▾)', () => setPanelHidden(sec.dataset.dock, true));
+    closeBtn.classList.add('dock-close');
+    ctl.append(sec._collapseBtn, sec._floatBtn, closeBtn);
     head.appendChild(ctl);
     head.addEventListener('pointerdown', (e) => onDragStart(e, sec));
   }
   applyLayout();
+}
+
+// ---- panel visibility API (used by the View / Panels menu) ----
+export function getPanels() {
+  return Object.keys(byId).map((id) => ({ id, title: titles[id] || id, hidden: !!layout.hidden?.[id] }));
+}
+export function setPanelHidden(id, hidden) {
+  if (!layout.hidden) layout.hidden = {};
+  if (hidden) layout.hidden[id] = true; else delete layout.hidden[id];
+  applyLayout(); save(); changed();
+}
+export function resetLayout() {
+  layout = { docks: JSON.parse(JSON.stringify(initialDocks)), float: {}, collapsed: {}, hidden: {} };
+  applyLayout(); save(); changed();
 }
 
 function btn(txt, title, fn) {
@@ -49,7 +72,7 @@ function btn(txt, title, fn) {
 
 // ---- layout model: { docks:{left:[id],right:[id]}, float:{id:{x,y,w,h}}, collapsed:{id} } ----
 function defaultLayout() {
-  const dl = { docks: { left: [], right: [] }, float: {}, collapsed: {} };
+  const dl = { docks: { left: [], right: [] }, float: {}, collapsed: {}, hidden: {} };
   for (const z of ['left', 'right'])
     for (const s of zones[z].querySelectorAll(':scope > .dock-panel')) dl.docks[z].push(s.dataset.dock);
   return dl;
@@ -58,7 +81,7 @@ function mergeLayout(saved, def) {
   if (!saved || !saved.docks) return def;
   const all = new Set(Object.keys(byId));
   const seen = new Set();
-  const out = { docks: { left: [], right: [] }, float: {}, collapsed: saved.collapsed || {} };
+  const out = { docks: { left: [], right: [] }, float: {}, collapsed: saved.collapsed || {}, hidden: saved.hidden || {} };
   for (const z of ['left', 'right'])
     for (const id of saved.docks[z] || []) if (all.has(id) && !seen.has(id)) { out.docks[z].push(id); seen.add(id); }
   for (const id of Object.keys(saved.float || {})) if (all.has(id) && !seen.has(id)) { out.float[id] = saved.float[id]; seen.add(id); }
@@ -72,6 +95,7 @@ function removeFromLayout(id) {
 }
 
 function applyLayout() {
+  const hidden = layout.hidden || {};
   for (const z of ['left', 'right']) {
     for (const id of layout.docks[z]) {
       const sec = byId[id];
@@ -80,6 +104,7 @@ function applyLayout() {
       sec.removeAttribute('style');
       zones[z].appendChild(sec);
       sec.classList.toggle('dock-collapsed', !!layout.collapsed[id]);
+      if (hidden[id]) sec.style.display = 'none';
       syncBtns(sec);
     }
   }
@@ -91,6 +116,7 @@ function applyLayout() {
     sec.classList.add('dock-floating');
     document.body.appendChild(sec);
     Object.assign(sec.style, { left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px' });
+    if (hidden[id]) sec.style.display = 'none';
     syncBtns(sec);
   }
 }

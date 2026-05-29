@@ -18,8 +18,10 @@ export function initDoors(blockEl, hostEl) {
 function render() {
   if (!block) return;
   const isPattern = state.ui.activeKind === 'pattern';
-  block.hidden = !isPattern;
-  if (!isPattern) return;
+  if (!isPattern) {
+    host.innerHTML = '<div class="tileset-meta">Edit a pattern (Patterns ＋ in the tab bar) to set its doors.</div>';
+    return;
+  }
   const d = activeDoc();
   if (!d) return;
   if (!d.doors) d.doors = { n: false, e: false, s: false, w: false };
