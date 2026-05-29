@@ -10,6 +10,7 @@ import { newProject, saveProject, loadProjectFromText } from './project.js';
 import { runExport } from './exporters/index.js';
 import { restore, scheduleSave, clearSaved } from './persist.js';
 import { buildDefaultProject } from './default-project.js';
+import { initPlay } from './play.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -30,7 +31,18 @@ const els = {
   btnNew: $('btn-new'), btnSave: $('btn-save'), btnLoad: $('btn-load'),
   exportTarget: $('export-target'), btnExport: $('btn-export'),
   fileImage: $('file-image'), fileProject: $('file-project'),
+  btnPlay: $('btn-play'),
 };
+
+// ▶Play overlay elements + wiring
+initPlay({
+  btnPlay: $('btn-play'),
+  overlay: $('play-overlay'),
+  frame: $('play-frame'),
+  status: $('play-status'),
+  btnPlayClose: $('btn-play-close'),
+  btnPlayReload: $('btn-play-reload'),
+});
 
 // ---- init ----
 initRenderer(els.mapCanvas);
