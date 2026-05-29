@@ -11,13 +11,14 @@
   "scripts": {
     "dev": "npm run dev -w @poc/editor",
     "dev:editor": "npm run dev -w @poc/editor",
-    "build": "npm run build -w @poc/editor",
+    "dev:game": "npm run dev -w @poc/game",
+    "build": "npm run build:all",
+    "build:all": "npm run build:editor && npm run build:game",
     "build:editor": "npm run build -w @poc/editor",
-    "preview": "npm run preview -w @poc/editor",
+    "build:game": "npm run bundle:demo && npm run build -w @poc/game && node tools/sync-dist-bundle.mjs",
+    "preview:editor": "npm run preview -w @poc/editor",
+    "preview:game": "npm run preview -w @poc/game",
     "bundle:demo": "node tools/make-demo-bundle.mjs",
     "tileset:sample": "node tools/make-sample-tileset.js"
-  },
-  "devDependencies": {
-    "vite": "^5.4.0"
   }
 }

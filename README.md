@@ -1,50 +1,79 @@
 # 🧩 POC Tile Editor
 
-A browser-based tile map editor with one-click export to **Godot 4**, **Unity**,
-**Tiled (.tmj)**, and an engine-agnostic **Generic JSON** format. No build step,
-no dependencies — pure HTML/CSS/ES modules.
+A browser-based tile map **editor** with one-click export to **Godot 4**,
+**Unity**, **Tiled (.tmj)**, and an engine-agnostic **Generic JSON** format —
+plus a runnable **PixiJS game** that proves the data is engine-ready. A Vite +
+npm-workspaces monorepo where the tool and the game share one format SDK.
 
-![stack](https://img.shields.io/badge/stack-vanilla%20JS-yellow) ![deps](https://img.shields.io/badge/dependencies-0-green)
+![stack](https://img.shields.io/badge/stack-Vite%20%2B%20PixiJS-blue) ![core](https://img.shields.io/badge/shared-%40poc%2Fcore-green)
+
+## The pipeline — three decoupled roles
+
+Split into three parts joined only by a **bundle** (data + resources, no logic)
+and a shared **`@poc/core`** SDK. See [ARCHITECTURE.md](ARCHITECTURE.md) for the
+full story.
+
+```
+① apps/editor/  ──▶  ② bundles/  ──▶  ③ apps/game/
+  the tool              the contract       the game (PixiJS)
+  (intent in)           map.json + PNGs    (consumes only the bundle)
+        └── shares ──▶ packages/core (@poc/core) ◀── shares ──┘
+```
+
+**One codebase, two deployments.** In development the editor and game run as two
+Vite dev servers with HMR; the editor's **▶ Play** embeds the game and feeds it
+the live map, so you test instantly. For release, each app builds to its own
+optimized `dist/`.
 
 ## Quick start
 
-ES modules must be served over http(s) (not opened as `file://`):
-
 ```bash
-./serve.sh           # serves on http://localhost:8080
-# or:
-python3 -m http.server 8080
+npm install
+npm run dev          # ① editor  → http://localhost:5173  (HMR)
+npm run dev:game     # ③ game     → http://localhost:5175  (HMR, PixiJS)
 ```
 
-Then open <http://localhost:8080>.
+- **Editor** → <http://localhost:5173> — paint, then hit **▶ Play** to run the
+  live map in the embedded game (no export step). Work autosaves to the browser.
+- **Game (standalone)** → <http://localhost:5175> — loads the demo bundle; press
+  **T** for day/night. Load any map with `?bundle=<url-to-map.json>`.
 
-1. Click **＋** next to *Tilesets* and pick a PNG (a ready-made one is in
-   `samples/tileset.png`).
+### Release build
+
+```bash
+npm run build:all    # builds apps/editor/dist and apps/game/dist
+# or individually:
+npm run build:editor
+npm run build:game   # rebuilds the demo bundle, tree-shakes Pixi, syncs the bundle into dist
+```
+
+> Both apps import `@poc/core` by bare specifier, so they run through Vite (which
+> resolves the workspace). The root `index.html` landing page links to the dev
+> servers.
+
+## Editor usage
+
+1. The editor opens with a starter scene (two sample tilesets + a small map).
+   Add more tilesets with **＋** next to *Tilesets* (or replace the project).
 2. Select tiles in the **Palette** (click, or drag to grab a multi-tile stamp).
 3. Paint on the canvas. Add **Layers** on the right; set the **Map** size.
-4. Pick an **Export target** in the top bar and hit **Export ⤓**.
+4. **▶ Play** to test live, or pick an **Export target** and hit **Export ⤓**.
 
-### Tools & shortcuts
+| Key | Tool |  | Key | Action |
+|-----|------|--|-----|--------|
+| `B` | Brush / stamp | | `Ctrl/⌘ + Z` | Undo |
+| `E` | Eraser | | `Ctrl/⌘ + Shift + Z` | Redo |
+| `G` | Fill (flood) | | `Space`-drag / middle-drag | Pan |
+| `R` | Rectangle | | Mouse wheel | Zoom |
+| `I` | Picker | | | |
 
-| Key | Tool |
-|-----|------|
-| `B` | Brush / stamp |
-| `E` | Eraser |
-| `G` | Fill (flood) |
-| `R` | Rectangle |
-| `I` | Picker (eyedropper) |
-| `Ctrl/⌘ + Z` | Undo |
-| `Ctrl/⌘ + Shift + Z` / `Ctrl + Y` | Redo |
-| `Space + drag` / middle-drag | Pan |
-| Mouse wheel | Zoom |
-
-**Save / Load** writes a self-contained `*.tileproj.json` (tileset images are
-embedded as base64), so you can resume work later.
+Work **autosaves** to `localStorage` and restores on reload. **New** clears it.
+**Save / Load** writes a self-contained `*.tileproj.json` (tilesets embedded).
 
 ## Export formats
 
-Every export downloads the data file **plus the tileset PNG(s)** so it's usable
-immediately.
+Every export downloads the data file **plus the tileset PNG(s)**. Exporters live
+in `@poc/core` (shared by the editor's *Export* button and the bundle builder).
 
 | Target | File | How to consume |
 |--------|------|----------------|
@@ -53,58 +82,46 @@ immediately.
 | Godot 4 | `name.godot.json` | Use `engine-templates/godot/TileMapImporter.gd`. |
 | Unity | `name.unity.json` | Use `engine-templates/unity/TileMapImporter.cs`. |
 
-### Godot 4
+## The game & bundles
 
-1. Copy `TileMapImporter.gd`, `name.godot.json` and the tileset PNG into your project.
-2. Attach the script to a `Node2D`, set `json_path` in the Inspector, run the scene.
-3. It builds a `TileSet` and one `TileMapLayer` per editor layer.
+`apps/game` (PixiJS) depends on **nothing but a bundle**. Build the demo bundle
+(uses the real Generic exporter from `@poc/core`):
 
-### Unity
+```bash
+npm run bundle:demo            # → bundles/demo/ (map.json + day/night PNGs)
+```
 
-1. Copy `TileMapImporter.cs` into `Assets/`, and the JSON + PNG into a `Resources/` folder.
-2. Set the tileset texture: *Texture Type = Sprite*, *Read/Write = On*, *Filter = Point*.
-3. Add `TileMapImporter` to a GameObject, set `jsonResource` (no extension), press Play.
+Make alternate-tone, same-grid tilesets for drop-in reskins:
 
-## Data model
+```bash
+node tools/make-tileset-variant.mjs night    # → samples/tileset.night.png
+node tools/make-tileset-variant.mjs autumn
+```
 
-The native project (and Generic export) uses **global tile ids (gid)**, matching
-Tiled's scheme: `0` is an empty cell; otherwise `gid = tileset.firstId + localIndex`.
-Multiple tilesets are supported; each gets a contiguous gid range.
+Because cells store tile **indices** (not pixels), swapping the tileset PNG for a
+same-grid one re-tones every map — no data or code changes. See
+[ARCHITECTURE.md](ARCHITECTURE.md) → *reskin rules*.
 
 ## Project structure
 
-The top level mirrors the three roles of the pipeline:
-
 ```
-index.html              # landing page → links to all three roles
+package.json            # npm workspaces root (dev/build scripts)
+index.html              # landing page → links to the dev servers
 │
-├── editor/             # ① the tool  (human intent goes in)
-│   ├── index.html      #   editor shell
-│   ├── css/style.css
-│   └── js/             #   state · history · renderer · palette · tools · panels · project · main
-│       └── exporters/  #   generic · tiled · godot · unity (+ dispatch)
+├── packages/core/      # 🔑 @poc/core — shared SDK (gid math + exporters), no DOM
+│   └── src/
+├── apps/editor/        # ① the tool   — Vite app: paint, layers, autosave, ▶Play
+│   ├── vite.config.js
+│   └── js/             #   state · history · renderer · palette · tools · panels · project · persist · play
+├── apps/game/          # ③ the game   — Vite + PixiJS: bundle.js · game.js · main.js
+│   └── public/         #   (mirrored demo bundle, generated)
 │
-├── bundles/demo/       # ② the contract  (data + resources, no logic)
-│   ├── map.json        #   placement data: layers of tile ids
-│   ├── tileset.day.png #   resource (bright tone)
-│   └── tileset.night.png  # same 8×8 grid, cool tone (a reskin)
-│
-├── game-runtime/       # ③ the game  (depends only on a bundle)
-│   ├── index.html
-│   └── game.js         #   loads a bundle; owns collision/player/camera/skins
-│
-├── engine-templates/   # ready-to-use Godot (.gd) & Unity (.cs) importers
-├── tools/              # make-demo-bundle · make-sample-tileset · make-tileset-variant
+├── bundles/demo/       # ② the contract — map.json + tileset.day/night.png
+├── engine-templates/   # Godot (.gd) & Unity (.cs) runtime importers
+├── tools/              # make-demo-bundle · make-sample-tileset · make-tileset-variant · sync-dist-bundle
 ├── samples/            # source tilesets
-└── ARCHITECTURE.md     # the three roles, the bundle contract, reskin rules
+└── ARCHITECTURE.md
 ```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full role breakdown.
-
-## Git branches
-
-- `main` — stable line
-- `develop` — integration branch for ongoing work
 
 ## License
 
