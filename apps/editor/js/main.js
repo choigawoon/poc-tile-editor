@@ -9,6 +9,7 @@ import { initMapTabs } from './maps.js';
 import { initDoors } from './doors.js';
 import { generateDungeon } from './pcg.js';
 import { initGenai } from './genai.js';
+import { initDock } from './dock.js';
 import { addTileset, fileToDataUrl } from './tileset.js';
 import { importImageAsTiles } from './import-image.js';
 import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
@@ -68,6 +69,7 @@ initPanelResize(document.querySelector('.layout'), renderPalette);
 initMapTabs(els.mapTabs);
 initDoors(els.doorBlock, els.doorPanel);
 initGenai(els.genaiPanel);
+initDock(document);
 
 document.getElementById('palette-zoom-in').onclick = () => setPaletteZoom(1);
 document.getElementById('palette-zoom-out').onclick = () => setPaletteZoom(-1);

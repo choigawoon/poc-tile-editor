@@ -3,6 +3,7 @@
 // or slice it into tiles. Only works under `npm run dev` (the bridge middleware).
 import { addTileset } from './tileset.js';
 import { importImageAsTiles } from './import-image.js';
+import { state, emit } from './state.js';
 
 // Starter prompts — pick one, tweak a few words, generate. All push toward an
 // edge-to-edge grid (no gutters) so slicing into tiles lines up.
@@ -101,8 +102,13 @@ function render() {
   useWhole.onclick = async () => {
     if (!lastDataUrl) return;
     const t = tileSize();
-    await addTileset('ai-tileset', lastDataUrl, { tileWidth: t, tileHeight: t });
-    status.textContent = `Added as tileset (${t}px tiles).`;
+    const ts = await addTileset('ai-tileset', lastDataUrl, { tileWidth: t, tileHeight: t });
+    // select it so it shows in the palette immediately
+    state.ui.activeTilesetId = ts.id;
+    state.ui.selection = { tilesetId: ts.id, col: 0, row: 0, w: 1, h: 1 };
+    emit('tilesets:change');
+    emit('selection:change');
+    status.textContent = `Added & selected — it's now in the palette (${ts.columns}×${ts.rows} @ ${t}px).`;
   };
   useSlice.onclick = async () => {
     if (!lastDataUrl) return;

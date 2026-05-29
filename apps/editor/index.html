@@ -42,7 +42,7 @@
   <main class="layout">
     <!-- Left: tilesets & palette -->
     <aside class="panel left">
-      <section class="block">
+      <section class="block dock-panel" data-dock="tilesets">
         <div class="block-head">
           <span>Tilesets</span>
           <span class="zoom-ctl">
@@ -53,7 +53,7 @@
         <select id="tileset-select" class="full"></select>
         <div class="tileset-meta" id="tileset-meta"></div>
       </section>
-      <section class="block grow">
+      <section class="block grow dock-panel" data-dock="palette">
         <div class="block-head">
           <span>Palette</span>
           <span class="zoom-ctl">
@@ -65,11 +65,11 @@
           <canvas id="palette-canvas"></canvas>
         </div>
       </section>
-      <section class="block tile-block">
+      <section class="block tile-block dock-panel" data-dock="tile">
         <div class="block-head"><span>Selected tile</span></div>
         <div id="tile-meta"></div>
       </section>
-      <section class="block">
+      <section class="block dock-panel" data-dock="ai">
         <div class="block-head"><span>✨ AI tileset</span></div>
         <div id="genai-panel"></div>
       </section>
@@ -92,7 +92,7 @@
 
     <!-- Right: layers & map props -->
     <aside class="panel right">
-      <section class="block">
+      <section class="block dock-panel" data-dock="map">
         <div class="block-head"><span>Map</span></div>
         <div class="field"><label>Tile W</label><input id="map-tilew" type="number" min="1" value="32" /></div>
         <div class="field"><label>Tile H</label><input id="map-tileh" type="number" min="1" value="32" /></div>
@@ -101,11 +101,11 @@
         <button id="btn-resize" class="full">Apply size</button>
         <label class="check"><input type="checkbox" id="chk-grid" checked /> Show grid</label>
       </section>
-      <section class="block" id="door-block" hidden>
+      <section class="block dock-panel" id="door-block" data-dock="doors" hidden>
         <div class="block-head"><span>Pattern doors</span></div>
         <div id="door-panel"></div>
       </section>
-      <section class="block grow">
+      <section class="block grow dock-panel" data-dock="layers">
         <div class="block-head">
           <span>Layers</span>
           <button id="btn-add-layer" class="mini" title="Add layer">＋</button>

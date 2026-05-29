@@ -105,10 +105,26 @@ input::placeholder { color: var(--muted); }
 }
 .block.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .block-head {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; align-items: center; gap: 6px;
   font-weight: 600; color: var(--muted); text-transform: uppercase;
   font-size: 11px; letter-spacing: .5px; margin-bottom: 8px;
 }
+.block-head > span:first-child { flex: 1; } /* title pushes controls to the right */
+
+/* dockable panels */
+.dock-ctl { display: inline-flex; gap: 1px; }
+.dock-btn { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 3px; font-size: 12px; line-height: 1; }
+.dock-btn:hover { color: var(--accent); }
+.dock-collapsed { flex: 0 0 auto !important; }
+.dock-collapsed > *:not(.block-head) { display: none !important; }
+.dock-collapsed .block-head { margin-bottom: 0; }
+.dock-floating {
+  position: fixed; z-index: 45; min-width: 200px; min-height: 110px;
+  padding: 10px; background: var(--panel);
+  border: 1px solid var(--accent); border-radius: 8px;
+  box-shadow: 0 14px 44px rgba(0,0,0,.5); resize: both; overflow: auto;
+}
+.dock-floating .block-head { cursor: move; position: sticky; top: 0; background: var(--panel); z-index: 1; }
 .tileset-meta { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 .field {
