@@ -72,10 +72,13 @@
     <!-- drag to resize the left panel -->
     <div class="resizer" data-resize="left" title="Drag to resize"></div>
 
-    <!-- Center: map canvas -->
+    <!-- Center: map tabs + canvas -->
     <section class="stage" id="stage">
-      <canvas id="map-canvas"></canvas>
-      <div class="stage-hud" id="stage-hud">0, 0</div>
+      <div class="map-tabs" id="map-tabs"></div>
+      <div class="stage-canvas" id="stage-canvas">
+        <canvas id="map-canvas"></canvas>
+        <div class="stage-hud" id="stage-hud">0, 0</div>
+      </div>
     </section>
 
     <!-- drag to resize the right panel -->

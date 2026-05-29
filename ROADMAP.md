@@ -39,13 +39,15 @@ Dependency chain: `0 → 1 → 2` and `0 → 1 → 3 → 4`.
 - [x] commit "Phase 0: shared-workspace model"
 - _Note for resume_: tile size (`tileWidth/Height`) is workspace-level (one grid for all maps). Per-map tile size is a future option if needed.
 
-### ▶ CURRENT — Phase 1 — multi-map tabs + new map + save  (needs P0)
-- [ ] tab bar UI (list maps · switch · `+` new map · rename · close)
-- [ ] new-map flow (size prompt / defaults); recenter camera on switch
-- [ ] save/load whole workspace `.json`
-- [ ] verify + commit
+### Phase 1 — multi-map tabs + new map + save  (DONE ✓)
+- [x] `maps.js` tab bar: list maps · click switch · `＋` new map · dblclick rename · `×` close
+- [x] stage restructured to tabs + canvas area; camera recenters on switch (canvas sizes to `#stage-canvas`)
+- [x] save/load whole workspace `.json` (already via P0 project.js)
+- [x] verify: 12 Node tests (new/switch/close, map isolation, shared tilesets, neighbor fallback) + build green
+- [ ] ⚠️ browser eyeball pending (tab bar render + stage layout) — check on dev server
+- [x] commit
 
-### Phase 2 — test tileset + load & test  (tileset asset independent; testing needs P1)
+### ▶ CURRENT — Phase 2 — test tileset + load & test  (tileset asset independent; testing needs P1)
 - [ ] richer programmatic test tileset (grass/wall/water/**door** markers) — extend `tools/make-sample-tileset.js`
 - [ ] (optional) genai-MCP art variant
 - [ ] paint test maps across tabs, tag/meta, ▶Play

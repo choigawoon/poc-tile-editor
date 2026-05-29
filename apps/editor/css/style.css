@@ -170,14 +170,33 @@ input::placeholder { color: var(--muted); }
 #palette-canvas { display: block; image-rendering: pixelated; cursor: crosshair; }
 .zoom-ctl { display: inline-flex; gap: 4px; }
 
-/* Stage */
-.stage {
-  position: relative;
-  background:
-    repeating-conic-gradient(#202126 0% 25%, #1a1b20 0% 50%) 0 / 24px 24px;
-  overflow: hidden;
+/* Stage = map tabs + canvas area */
+.stage { display: flex; flex-direction: column; overflow: hidden; }
+.stage-canvas {
+  flex: 1; position: relative; overflow: hidden;
+  background: repeating-conic-gradient(#202126 0% 25%, #1a1b20 0% 50%) 0 / 24px 24px;
 }
 #map-canvas { display: block; image-rendering: pixelated; }
+
+/* map tabs */
+.map-tabs {
+  display: flex; align-items: center; gap: 3px;
+  height: 30px; padding: 0 6px; flex: 0 0 auto;
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.map-tab {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px; font-size: 12px; white-space: nowrap; cursor: pointer;
+  color: var(--muted); background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 6px 6px 0 0;
+}
+.map-tab.active { color: var(--text); background: var(--bg); border-color: var(--accent); }
+.map-tab .mt-name { outline: none; }
+.map-tab .mt-name input { width: 90px; }
+.map-tab .mt-close { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; font-size: 13px; line-height: 1; }
+.map-tab .mt-close:hover { color: #ff5d5d; }
+.map-tabs .mt-add { padding: 1px 8px; }
 .stage-hud {
   position: absolute; bottom: 8px; left: 8px;
   background: rgba(0,0,0,.55); padding: 3px 8px; border-radius: var(--radius);

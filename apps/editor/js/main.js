@@ -5,6 +5,7 @@ import { initPalette, renderPalette, setPaletteZoom } from './palette.js';
 import { initPanels } from './panels.js';
 import { initTileMeta } from './tilemeta.js';
 import { initPanelResize } from './panel-resize.js';
+import { initMapTabs } from './maps.js';
 import { addTileset, fileToDataUrl } from './tileset.js';
 import { importImageAsTiles } from './import-image.js';
 import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
@@ -19,6 +20,8 @@ const $ = (id) => document.getElementById(id);
 
 const els = {
   stage: $('stage'),
+  stageCanvas: $('stage-canvas'),
+  mapTabs: $('map-tabs'),
   mapCanvas: $('map-canvas'),
   hud: $('stage-hud'),
   paletteCanvas: $('palette-canvas'),
@@ -55,6 +58,7 @@ initPalette(els.paletteCanvas);
 initPanels(els);
 initTileMeta(els.tileMeta);
 initPanelResize(document.querySelector('.layout'), renderPalette);
+initMapTabs(els.mapTabs);
 
 document.getElementById('palette-zoom-in').onclick = () => setPaletteZoom(1);
 document.getElementById('palette-zoom-out').onclick = () => setPaletteZoom(-1);
@@ -78,11 +82,11 @@ on('history:change', updateUndoRedo);
 
 // ---- stage sizing ----
 function fitStage() {
-  const r = els.stage.getBoundingClientRect();
+  const r = els.stageCanvas.getBoundingClientRect();
   resizeCanvas(r.width, r.height);
   requestRender();
 }
-new ResizeObserver(fitStage).observe(els.stage);
+new ResizeObserver(fitStage).observe(els.stageCanvas);
 
 // center the map on first paint
 on('project:replaced', centerCamera);
@@ -103,7 +107,7 @@ fitStage();
 })();
 
 function centerCamera() {
-  const r = els.stage.getBoundingClientRect();
+  const r = els.stageCanvas.getBoundingClientRect();
   const mw = state.project.mapWidth * state.project.tileWidth;
   const mh = state.project.mapHeight * state.project.tileHeight;
   const cam = state.ui.camera;
