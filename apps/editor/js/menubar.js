@@ -3,6 +3,7 @@
 // wiring in main.js stays untouched. The View menu lists dockable panels and
 // reset, replacing the standalone "Panels" button.
 import { getPanels, setPanelHidden, resetLayout, onDockChange } from './dock.js';
+import { openDoc } from './help.js';
 
 const $ = (id) => document.getElementById(id);
 const proxy = (id) => () => $(id)?.click();
@@ -38,6 +39,12 @@ const MENUS = [
     label: 'Tools', items: () => [
       { label: 'Import image as tiles…', action: proxy('btn-import-tiles') },
       { label: '⚄ Dungeon (PCG) panel', action: () => setPanelHidden('pcg', false) },
+    ],
+  },
+  {
+    label: 'Help', items: () => [
+      { label: '역기획서 (Reverse spec)', action: () => openDoc('spec') },
+      { label: '릴리스 노트 (Release notes)', action: () => openDoc('notes') },
     ],
   },
 ];
