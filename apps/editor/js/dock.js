@@ -9,7 +9,7 @@
 // persisted per panel.
 const KEY = 'poc-editor-dock:v2';
 
-let zones, byId = {}, home = {}, layout, indicator, dragging = null, dropTarget = null;
+let zones, byId = {}, home = {}, layout, indicator, dragging = null, dropTarget = null, dragWasFloating = false;
 
 export function initDock(root = document) {
   zones = { left: root.querySelector('.panel.left'), right: root.querySelector('.panel.right') };
@@ -129,6 +129,7 @@ function onDragStart(e, sec) {
   e.preventDefault();
   dragging = sec;
   dropTarget = null;
+  dragWasFloating = !!layout.float[sec.dataset.dock];
   const r = sec.getBoundingClientRect();
   const offX = e.clientX - r.left, offY = e.clientY - r.top;
   sec.classList.remove('dock-floating');
@@ -179,16 +180,23 @@ function updateDrop(x, y) {
 function finishDrop(sec) {
   for (const z of ['left', 'right']) zones[z].classList.remove('dock-drop-zone', 'dock-drop-active');
   indicator.remove();
-  sec.classList.remove('dock-dragging');
   const id = sec.dataset.dock;
   if (dropTarget) {
+    // dropped on a column → dock there
     removeFromLayout(id);
     layout.docks[dropTarget.zone].splice(dropTarget.index, 0, id);
-  } else {
-    const r = sec.getBoundingClientRect();
-    removeFromLayout(id);
-    layout.float[id] = { x: Math.max(0, r.left), y: Math.max(48, r.top), w: Math.max(240, sec.offsetWidth), h: Math.max(140, sec.offsetHeight) };
+  } else if (dragWasFloating) {
+    // moving an already-floating panel → keep it floating at the new spot
+    layout.float[id] = {
+      x: Math.max(0, parseFloat(sec.style.left) || 0),
+      y: Math.max(48, parseFloat(sec.style.top) || 0),
+      w: Math.max(240, sec.offsetWidth),
+      h: Math.max(140, sec.offsetHeight),
+    };
   }
+  // else: a docked panel dropped in the void → layout untouched, so it snaps
+  // back to its original spot. (Floating is done with the ⤢ button.)
+  sec.classList.remove('dock-dragging');
   dragging = null; dropTarget = null;
   applyLayout(); save();
 }
