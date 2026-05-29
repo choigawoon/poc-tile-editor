@@ -1,5 +1,13 @@
 // Central application state + tiny event bus.
-// The "project" is the serializable document; "ui" is editor-only state.
+//
+// The document is a WORKSPACE: shared tilesets + tag registry + a shared gid
+// allocator, holding many maps (and later patterns). Tilesets are shared so the
+// same tile ids resolve in every map — the basis for patterns and PCG.
+//
+// `state.project` is a compatibility VIEW (a Proxy) that flattens the active map
+// + the shared workspace into the single "project" shape the rest of the editor
+// and the exporters already expect. Reads/writes route to the right place, so
+// existing call sites keep working unchanged.
 
 const listeners = new Map();
 
@@ -14,39 +22,35 @@ export function emit(event, payload) {
   if (set) for (const fn of set) fn(payload);
 }
 
-// ---- Project document (everything here is exported/serialized) ----
-export function createProject(opts = {}) {
+// ---- workspace document (everything here is serialized) ----
+export function createWorkspace(opts = {}) {
   const tileWidth = opts.tileWidth ?? 32;
   const tileHeight = opts.tileHeight ?? 32;
-  const mapWidth = opts.mapWidth ?? 30;
-  const mapHeight = opts.mapHeight ?? 20;
+  const map = makeMap(opts.name ?? 'Map 1', opts.mapWidth ?? 30, opts.mapHeight ?? 20, 0);
   return {
     format: 'poc-tile-editor',
-    version: 1,
+    version: 2,
     name: opts.name ?? 'Untitled',
     tileWidth,
     tileHeight,
-    mapWidth,
-    mapHeight,
     nextGid: 1,
-    tilesets: [],
-    layers: [makeLayer('Layer 1', mapWidth * mapHeight, 0)],
-    // Project-wide gameplay-tag dictionary (Unreal GameplayTags.ini analogue):
-    // powers autocomplete and keeps a shared taxonomy. Grows as users type.
+    tilesets: [],                  // shared across all maps & patterns
     tagRegistry: STARTER_TAGS.slice(),
+    maps: [map],
+    patterns: [],
   };
 }
 
-// A small starter taxonomy so tag autocomplete isn't empty and teaches the
-// dot-hierarchy format. Users extend it freely just by typing new tags.
-// Stored lowercase: the editor canonicalizes all tags/keys to lowercase.
-const STARTER_TAGS = [
-  'terrain.ground', 'terrain.water', 'terrain.wall',
-  'surface.grass', 'surface.sand', 'surface.ice', 'surface.mud',
-  'hazard.lava', 'hazard.spikes', 'hazard.drown',
-  'movement.blocked', 'movement.slow',
-  'trigger.door', 'trigger.switch', 'trigger.teleport',
-];
+export function makeMap(name, mapWidth, mapHeight, id) {
+  return {
+    id,
+    name,
+    mapWidth,
+    mapHeight,
+    layers: [makeLayer('Layer 1', mapWidth * mapHeight, 0)],
+    objects: [],                   // sparse instance objects (spawn, doors…)
+  };
+}
 
 export function makeLayer(name, cellCount, id) {
   return {
@@ -58,12 +62,52 @@ export function makeLayer(name, cellCount, id) {
   };
 }
 
+// Normalize any loaded doc to a workspace (migrates old single-project saves).
+export function toWorkspace(doc) {
+  if (doc && Array.isArray(doc.maps)) {
+    doc.patterns = doc.patterns || [];
+    return doc;
+  }
+  // legacy single-project (version 1): wrap its map into a workspace
+  const map = {
+    id: 0,
+    name: doc.name || 'Map 1',
+    mapWidth: doc.mapWidth,
+    mapHeight: doc.mapHeight,
+    layers: doc.layers || [makeLayer('Layer 1', doc.mapWidth * doc.mapHeight, 0)],
+    objects: doc.objects || [],
+    game: doc.game,
+  };
+  return {
+    format: 'poc-tile-editor',
+    version: 2,
+    name: doc.name || 'Untitled',
+    tileWidth: doc.tileWidth ?? 32,
+    tileHeight: doc.tileHeight ?? 32,
+    nextGid: doc.nextGid ?? 1,
+    tilesets: doc.tilesets || [],
+    tagRegistry: doc.tagRegistry || STARTER_TAGS.slice(),
+    maps: [map],
+    patterns: doc.patterns || [],
+  };
+}
+
+// Stored lowercase: the editor canonicalizes all tags/keys to lowercase.
+const STARTER_TAGS = [
+  'terrain.ground', 'terrain.water', 'terrain.wall',
+  'surface.grass', 'surface.sand', 'surface.ice', 'surface.mud',
+  'hazard.lava', 'hazard.spikes', 'hazard.drown',
+  'movement.blocked', 'movement.slow',
+  'trigger.door', 'trigger.switch', 'trigger.teleport',
+];
+
 export const state = {
-  project: createProject(),
+  workspace: createWorkspace(),
   // runtime-only image elements keyed by tileset id (not serialized directly)
   images: new Map(),
   ui: {
     activeTool: 'brush',
+    activeMapId: 0,
     activeLayerId: 0,
     activeTilesetId: null,
     // selection from palette: rectangular block of local tile indices
@@ -75,18 +119,60 @@ export const state = {
   },
 };
 
+export function activeMap() {
+  const w = state.workspace;
+  return w.maps.find((m) => m.id === state.ui.activeMapId) || w.maps[0] || null;
+}
+
+// After replacing the workspace (load/undo), point the UI at a valid map/layer.
+export function normalizeActive() {
+  const w = state.workspace;
+  if (!w.maps.find((m) => m.id === state.ui.activeMapId)) {
+    state.ui.activeMapId = w.maps[0] ? w.maps[0].id : 0;
+  }
+  const m = activeMap();
+  if (m && !m.layers.find((l) => l.id === state.ui.activeLayerId)) {
+    state.ui.activeLayerId = m.layers[0] ? m.layers[0].id : 0;
+  }
+}
+
+// ---- compatibility view: `state.project` = active map + shared workspace ----
+// Shared fields live on the workspace; the rest (name, mapWidth, mapHeight,
+// layers, objects, game) come from the active map.
+const SHARED = new Set(['format', 'version', 'tilesets', 'tagRegistry', 'tileWidth', 'tileHeight', 'nextGid']);
+const projectView = new Proxy({}, {
+  get(_t, k) {
+    if (SHARED.has(k)) return state.workspace[k];
+    const m = activeMap();
+    return m ? m[k] : undefined;
+  },
+  set(_t, k, v) {
+    if (SHARED.has(k)) { state.workspace[k] = v; return true; }
+    const m = activeMap();
+    if (m) m[k] = v;
+    return true;
+  },
+  has(_t, k) {
+    if (SHARED.has(k)) return true;
+    const m = activeMap();
+    return m ? k in m : false;
+  },
+});
+Object.defineProperty(state, 'project', { get() { return projectView; }, configurable: true });
+
 export function activeLayer() {
-  return state.project.layers.find((l) => l.id === state.ui.activeLayerId) || null;
+  const m = activeMap();
+  return m ? (m.layers.find((l) => l.id === state.ui.activeLayerId) || null) : null;
 }
 
 export function activeTileset() {
-  return state.project.tilesets.find((t) => t.id === state.ui.activeTilesetId) || null;
+  return state.workspace.tilesets.find((t) => t.id === state.ui.activeTilesetId) || null;
 }
 
 export function tilesetForGid(gid) {
   if (gid <= 0) return null;
   let found = null;
-  for (const ts of state.project.tilesets) {
+  for (const ts of state.workspace.tilesets) {
     if (gid >= ts.firstgid) found = ts;
   }
   return found;

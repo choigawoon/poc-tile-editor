@@ -1,14 +1,14 @@
 // Undo/redo via full snapshots of the project document.
 // Simple and robust for a POC; snapshots are small JSON blobs.
-import { state, emit } from './state.js';
+import { state, emit, normalizeActive } from './state.js';
 
 const MAX = 100;
 const undoStack = [];
 const redoStack = [];
 
 function snapshot() {
-  // images are runtime-only; we serialize the project doc only.
-  return JSON.stringify(state.project);
+  // images are runtime-only; we serialize the whole workspace doc.
+  return JSON.stringify(state.workspace);
 }
 
 export function pushHistory() {
@@ -19,7 +19,8 @@ export function pushHistory() {
 }
 
 function restore(json) {
-  state.project = JSON.parse(json);
+  state.workspace = JSON.parse(json);
+  normalizeActive();
   emit('project:replaced');
 }
 
