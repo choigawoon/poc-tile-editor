@@ -33,15 +33,28 @@ assists — and the game is unaffected as long as it still emits a valid bundle.
 Change the game — new physics, entities, lighting — and the authoring side is
 unaffected.
 
-## ① The editor (`editor/`)
+## ① The editor (`apps/editor/`)
 
 ```
-editor/
+apps/editor/
   index.html        editor shell
+  vite.config.js    dev server (HMR) + production build
   css/style.css
   js/               state · history · renderer · palette · tools · panels · project
-    exporters/      generic · tiled · godot · unity (+ dispatch)
+    exporters/      thin re-exports of @poc/core + DOM download glue
 ```
+
+Run with `npm run dev` (HMR on http://localhost:5173) or `npm run build`
+(minified `dist/`, with `@poc/core` bundled in). The exporters here are thin
+wrappers around the shared SDK — the actual format logic lives in
+`packages/core`.
+
+## The shared core (`packages/core`, `@poc/core`)
+
+Pure tile-format SDK with no DOM and no app state: `resolveGid`, `tileSrcRect`,
+`atlasCoord`, `slug`, `imageName`, and the four exporters. Both the editor and
+the game (and `tools/make-demo-bundle.mjs`) import it, so the tool and the game
+share one definition of the format — they can never drift apart.
 
 Where the human's intent enters. Exports go through `editor/js/exporters/`; the
 *Generic* exporter is also the code path used to build the demo bundle below.
@@ -56,8 +69,8 @@ bundles/demo/
 ```
 
 `map.json` is produced by the **real Generic exporter**
-(`editor/js/exporters/generic.js`) — the exact code path the editor's *Export*
-button uses. Built with:
+(`packages/core/src/exporters/generic.js`, i.e. `@poc/core`) — the exact code
+path the editor's *Export* button uses. Built with:
 
 ```bash
 node tools/make-demo-bundle.mjs
@@ -119,8 +132,8 @@ column count and indices shift — that's a *different* tileset, not a reskin.
 ## Try it
 
 ```bash
-./serve.sh                            # http://localhost:8080
-# landing: /index.html                (links to all three roles)
-# editor:  /editor/index.html
+npm install
+npm run dev                           # editor (Vite + HMR) → http://localhost:5173
+./serve.sh                            # static: landing + game → http://localhost:8080
 # game:    /game-runtime/index.html   (press T to toggle day/night)
 ```

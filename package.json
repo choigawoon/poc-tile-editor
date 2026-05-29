@@ -9,9 +9,11 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "npm run dev -w @poc/editor",
+    "dev:editor": "npm run dev -w @poc/editor",
+    "build": "npm run build -w @poc/editor",
+    "build:editor": "npm run build -w @poc/editor",
+    "preview": "npm run preview -w @poc/editor",
     "bundle:demo": "node tools/make-demo-bundle.mjs",
     "tileset:sample": "node tools/make-sample-tileset.js"
   },

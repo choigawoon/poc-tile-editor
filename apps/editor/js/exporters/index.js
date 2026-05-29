@@ -1,6 +1,6 @@
 // Editor-side export glue: pure exporters come from @poc/core; this module adds
 // the browser download behavior (Blobs, <a download>) the game runtime doesn't need.
-import { exportProject, imageName } from '../../../packages/core/src/index.js';
+import { exportProject, imageName } from '@poc/core';
 
 export function runExport(target, project) {
   const { filename, content } = exportProject(target, project);
