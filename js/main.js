@@ -35,10 +35,9 @@ initRenderer(els.mapCanvas);
 initPalette(els.paletteCanvas);
 initPanels(els);
 
-fitStage();
-emit('project:replaced');
-
 // ---- render scheduling ----
+// Defined before the first-paint calls at the bottom of this section, because
+// requestRender reads `dirty` (a `let`, in the temporal dead zone until here).
 let dirty = false;
 function requestRender() {
   if (dirty) return;
@@ -59,6 +58,10 @@ new ResizeObserver(fitStage).observe(els.stage);
 
 // center the map on first paint
 on('project:replaced', centerCamera);
+
+// first paint (after render scheduling + listeners are wired)
+fitStage();
+emit('project:replaced');
 function centerCamera() {
   const r = els.stage.getBoundingClientRect();
   const mw = state.project.mapWidth * state.project.tileWidth;
@@ -240,5 +243,5 @@ function flash(msg) {
   setTimeout(() => { els.hud.textContent = '0, 0'; }, 2500);
 }
 
-// expose a tiny hook for debugging in the console
-window.__tileEditor = { state };
+// expose a tiny hook for debugging / scripting in the console
+window.__tileEditor = { state, emit, addTileset, paintAt, fillAt, rectFill, render };
