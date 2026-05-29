@@ -111,7 +111,7 @@ export interface Selection {
 
 /**
  * The legacy flattened "project" shape: shared workspace fields merged with the
- * active document's fields. Read-only — produced by state.projectSnapshot() for
+ * active document's fields. Read-only — produced by projectSnapshot() for
  * exporters, the ▶Play bundle, and the renderer's per-frame loop.
  */
 export interface ProjectSnapshot {
