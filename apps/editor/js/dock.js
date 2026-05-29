@@ -1,110 +1,193 @@
-// Lightweight dockable panels. Each `.dock-panel` gets two header controls:
-//   ▾ collapse  — fold the body away (just the header stays)
-//   ⤢ pop out   — detach into a FLOATING, draggable, resizable window you can
-//                 place anywhere; ⤡ docks it back to its original spot.
-// Panels all read/write the shared `state` + event bus, so they keep working
-// wherever they live — only their position is UI. Layout persists per panel.
-const KEY = 'poc-editor-dock:v1';
+// Drag-to-dock panels. Grab a panel by its header and drag it:
+//   • over the LEFT or RIGHT column  → an insertion line shows where it'll land;
+//     drop to dock it there (between/above/below other panels, any column).
+//   • anywhere else                  → drop to leave it FLOATING (draggable,
+//     resizable) wherever you put it.
+// Header buttons: ▾ collapse (fold body) · ⤢ float in place.
+// Every panel reads/writes the shared state + event bus, so it works wherever it
+// lives. Soul of the layout (column membership, order, float pos, collapse) is
+// persisted per panel.
+const KEY = 'poc-editor-dock:v2';
+
+let zones, byId = {}, layout, indicator, dragging = null, dropTarget = null;
 
 export function initDock(root = document) {
-  const saved = load();
-  for (const sec of root.querySelectorAll('.dock-panel')) {
-    if (sec.dataset.dockReady) continue;
+  zones = { left: root.querySelector('.panel.left'), right: root.querySelector('.panel.right') };
+  if (!zones.left || !zones.right) return;
+  const panels = [...root.querySelectorAll('.dock-panel')];
+  byId = {};
+  for (const sec of panels) byId[sec.dataset.dock] = sec;
+
+  indicator = document.createElement('div');
+  indicator.className = 'dock-indicator';
+
+  layout = mergeLayout(load(), defaultLayout());
+
+  for (const sec of panels) {
     const head = sec.querySelector('.block-head');
     if (!head) continue;
-    sec.dataset.dockReady = '1';
-    const id = sec.dataset.dock;
-    sec._home = { parent: sec.parentNode, next: sec.nextSibling };
-
     const ctl = document.createElement('span');
     ctl.className = 'dock-ctl';
-    const collapse = mkBtn('▾', 'Collapse', () => toggleCollapse(sec));
-    const pop = mkBtn('⤢', 'Pop out / dock', () => toggleFloat(sec));
-    ctl.append(collapse, pop);
+    sec._collapseBtn = btn('▾', 'Collapse', () => toggleCollapse(sec));
+    sec._floatBtn = btn('⤢', 'Float / dock', () => toggleFloat(sec));
+    ctl.append(sec._collapseBtn, sec._floatBtn);
     head.appendChild(ctl);
-    sec._btns = { collapse, pop };
-
-    head.addEventListener('mousedown', (e) => {
-      if (!sec.classList.contains('dock-floating') || e.target.closest('button')) return;
-      startDrag(e, sec);
-    });
-
-    const st = saved[id];
-    if (st?.float) floatOn(sec, st.float);
-    else if (st?.collapsed) toggleCollapse(sec, true);
+    head.addEventListener('pointerdown', (e) => onDragStart(e, sec));
   }
+  applyLayout();
 }
 
-function mkBtn(txt, title, fn) {
+function btn(txt, title, fn) {
   const b = document.createElement('button');
   b.className = 'dock-btn'; b.textContent = txt; b.title = title;
   b.onclick = (e) => { e.stopPropagation(); fn(); };
   return b;
 }
 
-function toggleCollapse(sec, force) {
-  if (sec.classList.contains('dock-floating')) return; // floating panels don't collapse
-  const on = force ?? !sec.classList.contains('dock-collapsed');
-  sec.classList.toggle('dock-collapsed', on);
-  sec._btns.collapse.textContent = on ? '▸' : '▾';
-  save();
+// ---- layout model: { docks:{left:[id],right:[id]}, float:{id:{x,y,w,h}}, collapsed:{id} } ----
+function defaultLayout() {
+  const dl = { docks: { left: [], right: [] }, float: {}, collapsed: {} };
+  for (const z of ['left', 'right'])
+    for (const s of zones[z].querySelectorAll(':scope > .dock-panel')) dl.docks[z].push(s.dataset.dock);
+  return dl;
+}
+function mergeLayout(saved, def) {
+  if (!saved || !saved.docks) return def;
+  const all = new Set(Object.keys(byId));
+  const seen = new Set();
+  const out = { docks: { left: [], right: [] }, float: {}, collapsed: saved.collapsed || {} };
+  for (const z of ['left', 'right'])
+    for (const id of saved.docks[z] || []) if (all.has(id) && !seen.has(id)) { out.docks[z].push(id); seen.add(id); }
+  for (const id of Object.keys(saved.float || {})) if (all.has(id) && !seen.has(id)) { out.float[id] = saved.float[id]; seen.add(id); }
+  for (const z of ['left', 'right']) for (const id of def.docks[z]) if (!seen.has(id)) { out.docks[z].push(id); seen.add(id); }
+  return out;
+}
+function removeFromLayout(id) {
+  layout.docks.left = layout.docks.left.filter((x) => x !== id);
+  layout.docks.right = layout.docks.right.filter((x) => x !== id);
+  delete layout.float[id];
+}
+
+function applyLayout() {
+  for (const z of ['left', 'right']) {
+    for (const id of layout.docks[z]) {
+      const sec = byId[id];
+      if (!sec) continue;
+      sec.classList.remove('dock-floating', 'dock-dragging');
+      sec.removeAttribute('style');
+      zones[z].appendChild(sec);
+      sec.classList.toggle('dock-collapsed', !!layout.collapsed[id]);
+      syncBtns(sec);
+    }
+  }
+  for (const id of Object.keys(layout.float)) {
+    const sec = byId[id];
+    if (!sec) continue;
+    const f = layout.float[id];
+    sec.classList.remove('dock-collapsed');
+    sec.classList.add('dock-floating');
+    document.body.appendChild(sec);
+    Object.assign(sec.style, { left: f.x + 'px', top: f.y + 'px', width: f.w + 'px', height: f.h + 'px' });
+    syncBtns(sec);
+  }
+}
+
+function syncBtns(sec) {
+  const floating = sec.classList.contains('dock-floating');
+  sec._collapseBtn.textContent = sec.classList.contains('dock-collapsed') ? '▸' : '▾';
+  sec._collapseBtn.style.display = floating ? 'none' : '';
+  sec._floatBtn.textContent = floating ? '⤡' : '⤢';
+  sec._floatBtn.title = floating ? 'Dock back' : 'Float in place';
+}
+
+function toggleCollapse(sec) {
+  if (sec.classList.contains('dock-floating')) return;
+  const id = sec.dataset.dock;
+  layout.collapsed[id] = !layout.collapsed[id];
+  applyLayout(); save();
 }
 
 function toggleFloat(sec) {
-  if (sec.classList.contains('dock-floating')) dockBack(sec);
-  else floatOn(sec, null);
+  const id = sec.dataset.dock;
+  if (sec.classList.contains('dock-floating')) {
+    removeFromLayout(id);
+    layout.docks.left.push(id); // dock-back lands at the bottom of the left column
+  } else {
+    const r = sec.getBoundingClientRect();
+    removeFromLayout(id);
+    layout.float[id] = { x: Math.max(8, r.left), y: Math.max(56, r.top), w: Math.max(240, Math.round(r.width)), h: 320 };
+  }
+  applyLayout(); save();
 }
 
-function floatOn(sec, pos) {
-  const r = sec.getBoundingClientRect();
-  sec.classList.remove('dock-collapsed');
-  sec.classList.add('dock-floating');
-  sec._btns.collapse.textContent = '▾';
-  document.body.appendChild(sec);
-  sec.style.left = (pos?.x ?? Math.max(8, r.left)) + 'px';
-  sec.style.top = (pos?.y ?? Math.max(56, r.top)) + 'px';
-  sec.style.width = (pos?.w ?? Math.max(220, Math.round(r.width))) + 'px';
-  sec.style.height = (pos?.h ?? 300) + 'px';
-  sec._btns.pop.textContent = '⤡';
-  sec._btns.pop.title = 'Dock back';
-  save();
-}
-
-function dockBack(sec) {
-  sec.classList.remove('dock-floating');
-  sec.removeAttribute('style');
-  sec._home.parent.insertBefore(sec, sec._home.next);
-  sec._btns.pop.textContent = '⤢';
-  sec._btns.pop.title = 'Pop out / dock';
-  save();
-}
-
-function startDrag(e, sec) {
+// ---- drag ----
+function onDragStart(e, sec) {
+  if (e.button !== 0 || e.target.closest('button') || e.target.closest('input, textarea, select')) return;
   e.preventDefault();
-  const sx = e.clientX, sy = e.clientY;
-  const ox = parseFloat(sec.style.left) || 0, oy = parseFloat(sec.style.top) || 0;
+  dragging = sec;
+  dropTarget = null;
+  const r = sec.getBoundingClientRect();
+  const offX = e.clientX - r.left, offY = e.clientY - r.top;
+  sec.classList.remove('dock-floating');
+  sec.classList.add('dock-dragging');
+  document.body.appendChild(sec);
+  Object.assign(sec.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: Math.min(r.height, 360) + 'px' });
+
   const move = (ev) => {
-    sec.style.left = Math.max(0, ox + ev.clientX - sx) + 'px';
-    sec.style.top = Math.max(48, oy + ev.clientY - sy) + 'px';
+    sec.style.left = (ev.clientX - offX) + 'px';
+    sec.style.top = (ev.clientY - offY) + 'px';
+    updateDrop(ev.clientX, ev.clientY);
   };
-  const up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); save(); };
-  addEventListener('mousemove', move);
-  addEventListener('mouseup', up);
+  const up = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    finishDrop(sec);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+function zoneAt(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+  if (el.closest('.panel.left')) return 'left';
+  if (el.closest('.panel.right')) return 'right';
+  return null;
+}
+
+function updateDrop(x, y) {
+  const z = zoneAt(x, y);
+  if (!z) { indicator.remove(); dropTarget = null; return; }
+  const zoneEl = zones[z];
+  const sibs = [...zoneEl.querySelectorAll(':scope > .dock-panel')];
+  let idx = sibs.length;
+  for (let i = 0; i < sibs.length; i++) {
+    const r = sibs[i].getBoundingClientRect();
+    if (y < r.top + r.height / 2) { idx = i; break; }
+  }
+  if (idx < sibs.length) zoneEl.insertBefore(indicator, sibs[idx]); else zoneEl.appendChild(indicator);
+  dropTarget = { zone: z, index: idx };
+}
+
+function finishDrop(sec) {
+  indicator.remove();
+  sec.classList.remove('dock-dragging');
+  const id = sec.dataset.dock;
+  if (dropTarget) {
+    removeFromLayout(id);
+    layout.docks[dropTarget.zone].splice(dropTarget.index, 0, id);
+  } else {
+    const r = sec.getBoundingClientRect();
+    removeFromLayout(id);
+    layout.float[id] = { x: Math.max(0, r.left), y: Math.max(48, r.top), w: Math.max(240, sec.offsetWidth), h: Math.max(140, sec.offsetHeight) };
+  }
+  dragging = null; dropTarget = null;
+  applyLayout(); save();
 }
 
 let t;
 function save() {
   clearTimeout(t);
-  t = setTimeout(() => {
-    const out = {};
-    for (const sec of document.querySelectorAll('.dock-panel')) {
-      const floating = sec.classList.contains('dock-floating');
-      out[sec.dataset.dock] = {
-        collapsed: !floating && sec.classList.contains('dock-collapsed'),
-        float: floating ? { x: parseFloat(sec.style.left) || 0, y: parseFloat(sec.style.top) || 0, w: sec.offsetWidth, h: sec.offsetHeight } : null,
-      };
-    }
-    try { localStorage.setItem(KEY, JSON.stringify(out)); } catch { /* ignore quota */ }
-  }, 200);
+  t = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(layout)); } catch { /* quota */ } }, 200);
 }
-function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } }

@@ -89,6 +89,8 @@ input::placeholder { color: var(--muted); }
 }
 .panel.left { border-right: 1px solid var(--border); }
 .panel.right { border-left: 1px solid var(--border); }
+/* a column can hold many docked panels — scroll instead of clipping */
+.panel.left, .panel.right { overflow-y: auto; overflow-x: hidden; }
 
 /* drag handles between panels and the stage */
 .resizer { background: transparent; cursor: col-resize; }
@@ -118,13 +120,16 @@ input::placeholder { color: var(--muted); }
 .dock-collapsed { flex: 0 0 auto !important; }
 .dock-collapsed > *:not(.block-head) { display: none !important; }
 .dock-collapsed .block-head { margin-bottom: 0; }
-.dock-floating {
-  position: fixed; z-index: 45; min-width: 200px; min-height: 110px;
-  padding: 10px; background: var(--panel);
+.dock-floating, .dock-dragging {
+  z-index: 45; padding: 10px; background: var(--panel);
   border: 1px solid var(--accent); border-radius: 8px;
-  box-shadow: 0 14px 44px rgba(0,0,0,.5); resize: both; overflow: auto;
+  box-shadow: 0 14px 44px rgba(0,0,0,.5); overflow: auto;
 }
-.dock-floating .block-head { cursor: move; position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.dock-floating { position: fixed; min-width: 200px; min-height: 110px; resize: both; }
+.dock-dragging { position: fixed; pointer-events: none; opacity: .92; z-index: 60; }
+.dock-floating .block-head, .dock-dragging .block-head { cursor: move; position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.block-head { cursor: grab; }
+.dock-indicator { height: 3px; background: var(--accent); border-radius: 2px; margin: 3px 0; pointer-events: none; }
 .tileset-meta { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 .field {
