@@ -3,10 +3,12 @@
 import { marked } from 'marked';
 import specMd from '../../../REVERSE-SPEC.md?raw';
 import notesMd from '../../../RELEASE-NOTES.md?raw';
+import modularMd from '../../../MODULARIZATION.md?raw';
 
 const DOCS = {
   spec: { title: '역기획서 · Reverse Spec', md: specMd },
   notes: { title: '릴리스 노트 · Release Notes', md: notesMd },
+  modular: { title: '모듈화 분석 · Modularization', md: modularMd },
 };
 
 let overlay, titleEl, body;

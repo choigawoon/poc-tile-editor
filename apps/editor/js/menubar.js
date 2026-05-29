@@ -45,6 +45,7 @@ const MENUS = [
     label: 'Help', items: () => [
       { label: '역기획서 (Reverse spec)', action: () => openDoc('spec') },
       { label: '릴리스 노트 (Release notes)', action: () => openDoc('notes') },
+      { label: '모듈화 분석 (Modularization)', action: () => openDoc('modular') },
     ],
   },
 ];
