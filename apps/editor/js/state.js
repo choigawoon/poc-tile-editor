@@ -130,7 +130,9 @@ export function activeMap() {
 // A pattern is a small map-shaped document (+ door metadata, P4). Patterns and
 // maps share the same shape, so the whole editor edits either one.
 export function makePattern(name, mapWidth, mapHeight, id) {
-  return { ...makeMap(name, mapWidth, mapHeight, id), doors: { n: [], e: [], s: [], w: [] } };
+  // doors: which edges carry a (centered) connector — standardized so adjacent
+  // patterns connect when their shared edges both have a door (PCG).
+  return { ...makeMap(name, mapWidth, mapHeight, id), doors: { n: false, e: false, s: false, w: false } };
 }
 
 // The document currently being edited — a map or a pattern.

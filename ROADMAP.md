@@ -61,13 +61,21 @@ Dependency chain: `0 → 1 → 2` and `0 → 1 → 3 → 4`.
 - [ ] ⚠️ browser eyeball pending (tab groups, stamp preview)
 - [x] commit
 
-### ▶ CURRENT — Phase 4 — PCG door standardization + dungeon connect  (needs P3)
-- [ ] pattern `doors:{n,e,s,w}` edge-slot metadata + authoring UI
-- [ ] edge compatibility rule; seeded room-grid generator placing patterns via P3 stamp
-- [ ] verify + commit
+### Phase 4 — PCG door standardization + dungeon connect  (DONE ✓)
+- [x] pattern `doors:{n,e,s,w}` booleans (centered connector per edge) + authoring UI (`doors.js` — 4 checkboxes, shown only when editing a pattern)
+- [x] `pcg.js generateDungeon(cols,rows,rng)`: recursive-backtracker maze over the room grid → required open edges per room; pick best-matching pattern by door score; blit all into a new map. `⚄ Dungeon` button (prompts grid size). Seeded-RNG deterministic; reports door mismatches.
+- [x] verify: 11 Node tests (full assembly, size, 0-mismatch with all-doors, seed determinism, mismatch reporting, tight-match preference) + turbo build green
+- [ ] ⚠️ browser eyeball pending (door checkboxes, ⚄ Dungeon output)
+- [x] commit
+
+## 🎉 All phases (0–4) complete. Remaining polish: browser eyeball passes; optional genai art tileset (P2); richer door slots (multi-door per edge) if needed.
 
 ---
 
 ## Log (newest first)
+- **Phase 4 ✓** — door booleans + authoring UI; `pcg.js` recursive-backtracker dungeon assembler (door-matched pattern placement, seeded-deterministic); 11 tests. Roadmap complete.
+- **Phase 3 ✓** — patterns as map-shaped docs (activeDoc proxy), Maps|Patterns tabs, stamp tool; 12 tests.
+- **Phase 2 (part) ✓** — labeled test tileset w/ door (`make-test-tileset.mjs`); genai variant deferred.
+- **Phase 1 ✓** — multi-map tabs (new/switch/rename/close); 12 tests.
 - **Phase 0 ✓** — shared-workspace model via a `state.project` Proxy (zero churn on consumers); history/persist/project/migration done; 20 runtime tests + build green. Next: Phase 1 tabs.
 - _(start)_ plan approved; shared-workspace model chosen; beginning Phase 0.
