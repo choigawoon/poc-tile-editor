@@ -30,15 +30,16 @@ export function stampAt(col, row) {
 }
 
 function idx(col, row) {
-  return row * state.project.mapWidth + col;
+  return row * activeDoc().mapWidth + col;
 }
 function inBounds(col, row) {
-  return col >= 0 && row >= 0 && col < state.project.mapWidth && row < state.project.mapHeight;
+  const d = activeDoc();
+  return !!d && col >= 0 && row >= 0 && col < d.mapWidth && row < d.mapHeight;
 }
 
 // gid for a cell (dx,dy) inside the current selection stamp
 function selGid(sel, dx, dy) {
-  const ts = state.project.tilesets.find((t) => t.id === sel.tilesetId);
+  const ts = state.workspace.tilesets.find((t) => t.id === sel.tilesetId);
   if (!ts) return 0;
   const local = (sel.row + dy) * ts.columns + (sel.col + dx);
   return ts.firstgid + local;
@@ -82,7 +83,7 @@ export function fillAt(col, row) {
   const replacement = selGid(sel, 0, 0);
   if (target === replacement) return false;
 
-  const { mapWidth, mapHeight } = state.project;
+  const { mapWidth, mapHeight } = activeDoc();
   const stack = [[col, row]];
   let changed = false;
   while (stack.length) {
@@ -125,7 +126,7 @@ export function pickAt(col, row) {
   const gid = layer.data[idx(col, row)];
   if (!gid) return false;
   let ts = null;
-  for (const t of state.project.tilesets) if (gid >= t.firstgid) ts = t;
+  for (const t of state.workspace.tilesets) if (gid >= t.firstgid) ts = t;
   if (!ts) return false;
   const local = gid - ts.firstgid;
   state.ui.activeTilesetId = ts.id;

@@ -6,7 +6,11 @@
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
-    "./exporters": "./src/exporters/index.js"
+    "./exporters": "./src/exporters/index.js",
+    "./types": { "types": "./src/types.d.ts" }
   },
-  "files": ["src"]
+  "files": ["src"],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
 }

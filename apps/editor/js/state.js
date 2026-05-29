@@ -1,28 +1,78 @@
+// @ts-check
 // Central application state + tiny event bus.
 //
 // The document is a WORKSPACE: shared tilesets + tag registry + a shared gid
 // allocator, holding many maps (and later patterns). Tilesets are shared so the
 // same tile ids resolve in every map — the basis for patterns and PCG.
 //
-// `state.project` is a compatibility VIEW (a Proxy) that flattens the active map
-// + the shared workspace into the single "project" shape the rest of the editor
-// and the exporters already expect. Reads/writes route to the right place, so
-// existing call sites keep working unchanged.
+// Code reads SHARED fields (tilesets, tags, tile size, gid allocator) from
+// `state.workspace`, and per-document fields (size, layers, objects) from
+// `activeDoc()`. `projectSnapshot()` merges both into the legacy flat shape only
+// for the read-only export / ▶Play / render boundary.
 
+/** @typedef {import('@poc/core/types').Workspace} Workspace */
+/** @typedef {import('@poc/core/types').MapDoc} MapDoc */
+/** @typedef {import('@poc/core/types').Pattern} Pattern */
+/** @typedef {import('@poc/core/types').Layer} Layer */
+/** @typedef {import('@poc/core/types').Tileset} Tileset */
+/** @typedef {import('@poc/core/types').Selection} Selection */
+/** @typedef {import('@poc/core/types').ProjectSnapshot} ProjectSnapshot */
+
+/**
+ * Transient editor UI state (not serialized into the workspace).
+ * @typedef {Object} EditorUI
+ * @property {string} activeTool
+ * @property {'map'|'pattern'} activeKind  which document kind is being edited
+ * @property {number} activeMapId
+ * @property {number|null} activePatternId
+ * @property {number|null} stampPatternId  pattern chosen for the stamp tool
+ * @property {number} activeLayerId
+ * @property {number|null} activeTilesetId
+ * @property {Selection|null} selection
+ * @property {boolean} showGrid
+ * @property {{x:number,y:number,zoom:number}} camera
+ * @property {number} paletteZoom
+ * @property {number} nextLayerId
+ */
+
+/**
+ * @typedef {Object} AppState
+ * @property {Workspace} workspace
+ * @property {Map<number, HTMLImageElement>} images  runtime image elements by tileset id
+ * @property {EditorUI} ui
+ */
+
+/** @type {Map<string, Set<Function>>} */
 const listeners = new Map();
 
+/**
+ * Subscribe to an event. Returns an unsubscribe function.
+ * @param {string} event
+ * @param {Function} fn
+ * @returns {() => void}
+ */
 export function on(event, fn) {
-  if (!listeners.has(event)) listeners.set(event, new Set());
-  listeners.get(event).add(fn);
-  return () => listeners.get(event).delete(fn);
+  let set = listeners.get(event);
+  if (!set) listeners.set(event, set = new Set());
+  set.add(fn);
+  return () => { set.delete(fn); };
 }
 
+/**
+ * Emit an event to all subscribers.
+ * @param {string} event
+ * @param {*} [payload]
+ */
 export function emit(event, payload) {
   const set = listeners.get(event);
   if (set) for (const fn of set) fn(payload);
 }
 
 // ---- workspace document (everything here is serialized) ----
+/**
+ * @param {Partial<{name:string,mapWidth:number,mapHeight:number,tileWidth:number,tileHeight:number}>} [opts]
+ * @returns {Workspace}
+ */
 export function createWorkspace(opts = {}) {
   const tileWidth = opts.tileWidth ?? 32;
   const tileHeight = opts.tileHeight ?? 32;
@@ -41,6 +91,13 @@ export function createWorkspace(opts = {}) {
   };
 }
 
+/**
+ * @param {string} name
+ * @param {number} mapWidth
+ * @param {number} mapHeight
+ * @param {number} id
+ * @returns {MapDoc}
+ */
 export function makeMap(name, mapWidth, mapHeight, id) {
   return {
     id,
@@ -52,6 +109,12 @@ export function makeMap(name, mapWidth, mapHeight, id) {
   };
 }
 
+/**
+ * @param {string} name
+ * @param {number} cellCount
+ * @param {number} id
+ * @returns {Layer}
+ */
 export function makeLayer(name, cellCount, id) {
   return {
     id,
@@ -63,6 +126,10 @@ export function makeLayer(name, cellCount, id) {
 }
 
 // Normalize any loaded doc to a workspace (migrates old single-project saves).
+/**
+ * @param {any} doc  a parsed save file (current workspace or legacy v1 project)
+ * @returns {Workspace}
+ */
 export function toWorkspace(doc) {
   if (doc && Array.isArray(doc.maps)) {
     doc.patterns = doc.patterns || [];
@@ -101,6 +168,7 @@ const STARTER_TAGS = [
   'trigger.door', 'trigger.switch', 'trigger.teleport',
 ];
 
+/** @type {AppState} */
 export const state = {
   workspace: createWorkspace(),
   // runtime-only image elements keyed by tileset id (not serialized directly)
@@ -122,6 +190,7 @@ export const state = {
   },
 };
 
+/** @returns {MapDoc|null} */
 export function activeMap() {
   const w = state.workspace;
   return w.maps.find((m) => m.id === state.ui.activeMapId) || w.maps[0] || null;
@@ -129,6 +198,13 @@ export function activeMap() {
 
 // A pattern is a small map-shaped document (+ door metadata, P4). Patterns and
 // maps share the same shape, so the whole editor edits either one.
+/**
+ * @param {string} name
+ * @param {number} mapWidth
+ * @param {number} mapHeight
+ * @param {number} id
+ * @returns {Pattern}
+ */
 export function makePattern(name, mapWidth, mapHeight, id) {
   // doors: which edges carry a (centered) connector — standardized so adjacent
   // patterns connect when their shared edges both have a door (PCG).
@@ -136,6 +212,7 @@ export function makePattern(name, mapWidth, mapHeight, id) {
 }
 
 // The document currently being edited — a map or a pattern.
+/** @returns {MapDoc|Pattern|null} */
 export function activeDoc() {
   if (state.ui.activeKind === 'pattern') {
     return state.workspace.patterns.find((p) => p.id === state.ui.activePatternId) || null;
@@ -159,39 +236,39 @@ export function normalizeActive() {
   }
 }
 
-// ---- compatibility view: `state.project` = active map + shared workspace ----
-// Shared fields live on the workspace; the rest (name, mapWidth, mapHeight,
-// layers, objects, game) come from the active map.
-const SHARED = new Set(['format', 'version', 'tilesets', 'tagRegistry', 'tileWidth', 'tileHeight', 'nextGid']);
-const projectView = new Proxy({}, {
-  get(_t, k) {
-    if (SHARED.has(k)) return state.workspace[k];
-    const d = activeDoc();
-    return d ? d[k] : undefined;
-  },
-  set(_t, k, v) {
-    if (SHARED.has(k)) { state.workspace[k] = v; return true; }
-    const d = activeDoc();
-    if (d) d[k] = v;
-    return true;
-  },
-  has(_t, k) {
-    if (SHARED.has(k)) return true;
-    const d = activeDoc();
-    return d ? k in d : false;
-  },
-});
-Object.defineProperty(state, 'project', { get() { return projectView; }, configurable: true });
+// ---- read-only export / runtime boundary ----
+// A few consumers (exporters, ▶Play bundle, the renderer's per-frame loop) want
+// the legacy *flattened* shape: shared workspace fields + the active document's
+// fields merged into one object. Build it on demand. This is READ-ONLY — to
+// mutate, write to `state.workspace` (shared) or `activeDoc()` (per-document).
+/** @returns {ProjectSnapshot} */
+export function projectSnapshot() {
+  const w = state.workspace;
+  const d = /** @type {Partial<MapDoc>} */ (activeDoc() || {});
+  return {
+    format: w.format, version: w.version,
+    tilesets: w.tilesets, tagRegistry: w.tagRegistry,
+    tileWidth: w.tileWidth, tileHeight: w.tileHeight, nextGid: w.nextGid,
+    name: d.name, mapWidth: d.mapWidth, mapHeight: d.mapHeight,
+    layers: d.layers, objects: d.objects, game: d.game,
+  };
+}
 
+/** @returns {Layer|null} */
 export function activeLayer() {
   const d = activeDoc();
   return d ? (d.layers.find((l) => l.id === state.ui.activeLayerId) || null) : null;
 }
 
+/** @returns {Tileset|null} */
 export function activeTileset() {
   return state.workspace.tilesets.find((t) => t.id === state.ui.activeTilesetId) || null;
 }
 
+/**
+ * @param {number} gid
+ * @returns {Tileset|null}
+ */
 export function tilesetForGid(gid) {
   if (gid <= 0) return null;
   let found = null;

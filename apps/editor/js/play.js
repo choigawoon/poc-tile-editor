@@ -6,7 +6,7 @@
 //
 // This is the dev-loop half of "one codebase, two deployments": edit → ▶Play →
 // see it instantly; ship → `vite build` the game against a saved bundle.
-import { state } from './state.js';
+import { state, projectSnapshot } from './state.js';
 import { exportProject, imageName } from '@poc/core';
 
 // Where the game dev server lives. Overridable via ?game= for flexibility.
@@ -36,7 +36,7 @@ export function initPlay(elements) {
 }
 
 function open() {
-  if (!state.project.tilesets.length) {
+  if (!state.workspace.tilesets.length) {
     alert('Add a tileset and paint something first.');
     return;
   }
@@ -56,7 +56,7 @@ function close() {
 // Build the inline bundle from the live project and post it to the game.
 function sendBundle() {
   if (!ready) { setStatus('game not ready yet…'); return; }
-  const bundle = buildPlayBundle(state.project);
+  const bundle = buildPlayBundle(projectSnapshot());
   els.frame.contentWindow.postMessage({ type: 'poc-play', bundle }, '*');
   setStatus(`sending · ${bundle.map.width}×${bundle.map.height} · ${bundle.map.layers.length} layers`);
 }

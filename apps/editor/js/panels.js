@@ -1,5 +1,5 @@
 // Side-panel UI: tileset selector, layer list, map property fields.
-import { state, activeTileset, makeLayer, emit, on } from './state.js';
+import { state, activeTileset, activeDoc, makeLayer, emit, on } from './state.js';
 import { pushHistory } from './history.js';
 
 let els;
@@ -31,7 +31,7 @@ export function initPanels(elements) {
 function renderTilesets() {
   const sel = els.tilesetSelect;
   sel.innerHTML = '';
-  for (const ts of state.project.tilesets) {
+  for (const ts of state.workspace.tilesets) {
     const o = document.createElement('option');
     o.value = ts.id;
     o.textContent = `${ts.name} (${ts.tileCount} tiles)`;
@@ -49,27 +49,29 @@ function renderTilesets() {
 function addLayer() {
   pushHistory();
   const id = state.ui.nextLayerId++;
-  const cells = state.project.mapWidth * state.project.mapHeight;
-  state.project.layers.push(makeLayer(`Layer ${id + 1}`, cells, id));
+  const doc = activeDoc();
+  const cells = doc.mapWidth * doc.mapHeight;
+  doc.layers.push(makeLayer(`Layer ${id + 1}`, cells, id));
   state.ui.activeLayerId = id;
   emit('layers:change');
   emit('render');
 }
 
 function removeLayer(id) {
-  if (state.project.layers.length <= 1) return;
+  const doc = activeDoc();
+  if (doc.layers.length <= 1) return;
   pushHistory();
-  const i = state.project.layers.findIndex((l) => l.id === id);
-  state.project.layers.splice(i, 1);
+  const i = doc.layers.findIndex((l) => l.id === id);
+  doc.layers.splice(i, 1);
   if (state.ui.activeLayerId === id) {
-    state.ui.activeLayerId = state.project.layers[Math.max(0, i - 1)].id;
+    state.ui.activeLayerId = doc.layers[Math.max(0, i - 1)].id;
   }
   emit('layers:change');
   emit('render');
 }
 
 function moveLayer(id, dir) {
-  const layers = state.project.layers;
+  const layers = activeDoc().layers;
   const i = layers.findIndex((l) => l.id === id);
   const j = i + dir;
   if (j < 0 || j >= layers.length) return;
@@ -83,7 +85,7 @@ function renderLayers() {
   const list = els.layerList;
   list.innerHTML = '';
   // top layer first in the UI (render order is bottom-up in the array)
-  [...state.project.layers].reverse().forEach((layer) => {
+  [...activeDoc().layers].reverse().forEach((layer) => {
     const li = document.createElement('li');
     li.className = 'layer-item' + (layer.id === state.ui.activeLayerId ? ' active' : '');
 
@@ -131,10 +133,11 @@ function mkBtn(label, fn) {
 
 // ---- Map size ----
 function syncMapFields() {
-  els.mapTileW.value = state.project.tileWidth;
-  els.mapTileH.value = state.project.tileHeight;
-  els.mapCols.value = state.project.mapWidth;
-  els.mapRows.value = state.project.mapHeight;
+  const doc = activeDoc(), w = state.workspace;
+  els.mapTileW.value = w.tileWidth;
+  els.mapTileH.value = w.tileHeight;
+  els.mapCols.value = doc.mapWidth;
+  els.mapRows.value = doc.mapHeight;
   els.chkGrid.checked = state.ui.showGrid;
 }
 
@@ -145,19 +148,21 @@ function applyMapSize() {
   const rows = clamp(+els.mapRows.value, 1, 1000);
   pushHistory();
   resizeAllLayers(cols, rows);
-  state.project.tileWidth = tw;
-  state.project.tileHeight = th;
-  state.project.mapWidth = cols;
-  state.project.mapHeight = rows;
+  state.workspace.tileWidth = tw;
+  state.workspace.tileHeight = th;
+  const doc = activeDoc();
+  doc.mapWidth = cols;
+  doc.mapHeight = rows;
   emit('render');
   emit('layers:change');
 }
 
 // Resize layer data preserving existing cells (top-left anchored).
 function resizeAllLayers(newW, newH) {
-  const oldW = state.project.mapWidth;
-  const oldH = state.project.mapHeight;
-  for (const layer of state.project.layers) {
+  const doc = activeDoc();
+  const oldW = doc.mapWidth;
+  const oldH = doc.mapHeight;
+  for (const layer of doc.layers) {
     const next = new Array(newW * newH).fill(0);
     for (let r = 0; r < Math.min(oldH, newH); r++) {
       for (let c = 0; c < Math.min(oldW, newW); c++) {

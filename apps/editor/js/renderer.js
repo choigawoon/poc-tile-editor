@@ -1,6 +1,6 @@
 // Map canvas renderer: camera transform, grid, layered tile compositing,
 // and a hover/selection preview overlay.
-import { state } from './state.js';
+import { state, activeDoc, projectSnapshot } from './state.js';
 import { resolveGid, tileSrcRect } from './tileset.js';
 
 let canvas, ctx;
@@ -32,14 +32,14 @@ export function screenToWorld(sx, sy) {
 export function screenToTile(sx, sy) {
   const { x, y } = screenToWorld(sx, sy);
   return {
-    col: Math.floor(x / state.project.tileWidth),
-    row: Math.floor(y / state.project.tileHeight),
+    col: Math.floor(x / state.workspace.tileWidth),
+    row: Math.floor(y / state.workspace.tileHeight),
   };
 }
 
 export function render() {
   if (!ctx) return;
-  const p = state.project;
+  const p = projectSnapshot();
   const cam = state.ui.camera;
   const tw = p.tileWidth, th = p.tileHeight;
 
@@ -75,7 +75,7 @@ export function render() {
 }
 
 function drawLayer(layer, tw, th) {
-  const p = state.project;
+  const p = projectSnapshot();
   for (let i = 0; i < layer.data.length; i++) {
     const gid = layer.data[i];
     if (!gid) continue;
@@ -124,7 +124,7 @@ function drawOverlay(tw, th) {
 
     // ghost of the selected stamp
     if (sel && state.ui.activeTool === 'brush') {
-      const ts = state.project.tilesets.find((t) => t.id === sel.tilesetId);
+      const ts = state.workspace.tilesets.find((t) => t.id === sel.tilesetId);
       const img = ts && state.images.get(ts.id);
       if (img) {
         ctx.globalAlpha = 0.5;
@@ -143,5 +143,6 @@ function drawOverlay(tw, th) {
 }
 
 function inBounds(col, row) {
-  return col >= 0 && row >= 0 && col < state.project.mapWidth && row < state.project.mapHeight;
+  const d = activeDoc();
+  return !!d && col >= 0 && row >= 0 && col < d.mapWidth && row < d.mapHeight;
 }

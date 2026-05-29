@@ -1,5 +1,5 @@
 // Entry point: wires DOM, canvas input, tools, shortcuts and actions together.
-import { state, on, emit } from './state.js';
+import { state, on, emit, activeDoc, projectSnapshot } from './state.js';
 import { initRenderer, render, resizeCanvas, screenToTile, setHover, setRectPreview } from './renderer.js';
 import { initPalette, renderPalette, setPaletteZoom } from './palette.js';
 import { initPanels } from './panels.js';
@@ -122,8 +122,9 @@ fitStage();
 
 function centerCamera() {
   const r = els.stageCanvas.getBoundingClientRect();
-  const mw = state.project.mapWidth * state.project.tileWidth;
-  const mh = state.project.mapHeight * state.project.tileHeight;
+  const doc = activeDoc(), w = state.workspace;
+  const mw = doc.mapWidth * w.tileWidth;
+  const mh = doc.mapHeight * w.tileHeight;
   const cam = state.ui.camera;
   cam.zoom = Math.min(1, Math.max(0.1, Math.min(r.width / (mw + 80), r.height / (mh + 80))));
   cam.x = (r.width - mw * cam.zoom) / 2;
@@ -317,7 +318,7 @@ els.fileImport.onchange = async () => {
   const file = els.fileImport.files[0];
   if (!file) return;
   try {
-    const tw = clampInt(prompt('Tile width (px):', state.project.tileWidth), 1, 1024);
+    const tw = clampInt(prompt('Tile width (px):', state.workspace.tileWidth), 1, 1024);
     if (!tw) return;
     const th = clampInt(prompt('Tile height (px):', tw), 1, 1024);
     if (!th) return;
@@ -333,9 +334,9 @@ els.fileImport.onchange = async () => {
 function clampInt(v, lo, hi) { const n = Math.round(+v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : 0; }
 
 els.btnExport.onclick = () => {
-  if (!state.project.tilesets.length) { alert('Add a tileset and paint something first.'); return; }
+  if (!state.workspace.tilesets.length) { alert('Add a tileset and paint something first.'); return; }
   try {
-    const name = runExport(els.exportTarget.value, state.project);
+    const name = runExport(els.exportTarget.value, projectSnapshot());
     flash(`Exported ${name} (+ tileset images)`);
   } catch (err) { alert('Export failed: ' + err.message); }
 };

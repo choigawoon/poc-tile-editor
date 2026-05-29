@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "_comment": "Add files to `include` as you annotate them with `// @ts-check`. Kept narrow so the type-checked surface grows deliberately, file by file.",
+  "include": ["js/state.js"]
+}

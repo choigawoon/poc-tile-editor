@@ -9,7 +9,7 @@
 //
 // Either way the output is just a normal tileset + gid grid — same format, same
 // bundle, same game runtime. Nothing downstream needs to know how it was made.
-import { state, makeLayer, emit } from './state.js';
+import { state, activeDoc, makeLayer, emit } from './state.js';
 import { pushHistory } from './history.js';
 import { loadImage, addTileset } from './tileset.js';
 import { slug } from '@poc/core';
@@ -23,7 +23,7 @@ function hashCell(data) {
 
 // Grow the map (all layers, top-left anchored) so a cols×rows region fits.
 function ensureMapAtLeast(cols, rows) {
-  const p = state.project;
+  const p = activeDoc();
   const newW = Math.max(p.mapWidth, cols), newH = Math.max(p.mapHeight, rows);
   if (newW === p.mapWidth && newH === p.mapHeight) return;
   for (const layer of p.layers) {
@@ -96,11 +96,12 @@ export async function importImageAsTiles(dataUrl, name, { tileWidth, tileHeight,
 
   ensureMapAtLeast(cols, rows);
   const id = state.ui.nextLayerId++;
-  const layer = makeLayer(base, state.project.mapWidth * state.project.mapHeight, id);
-  const W = state.project.mapWidth;
+  const doc = activeDoc();
+  const layer = makeLayer(base, doc.mapWidth * doc.mapHeight, id);
+  const W = doc.mapWidth;
   for (let r = 0; r < rows; r++)
     for (let c = 0; c < cols; c++) layer.data[r * W + c] = ts.firstgid + placement[r][c];
-  state.project.layers.push(layer);
+  doc.layers.push(layer);
   state.ui.activeLayerId = id;
 
   emit('tilesets:change');

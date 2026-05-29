@@ -31,8 +31,8 @@ function computeGeometry(ts) {
 // Add a tileset from a data URL. Returns the created tileset descriptor.
 export async function addTileset(name, dataUrl, opts = {}) {
   const img = await loadImage(dataUrl);
-  const id = state.project.tilesets.length
-    ? Math.max(...state.project.tilesets.map((t) => t.id)) + 1
+  const id = state.workspace.tilesets.length
+    ? Math.max(...state.workspace.tilesets.map((t) => t.id)) + 1
     : 0;
   const ts = {
     id,
@@ -40,15 +40,15 @@ export async function addTileset(name, dataUrl, opts = {}) {
     image: dataUrl, // embedded so projects are self-contained
     imageWidth: img.naturalWidth,
     imageHeight: img.naturalHeight,
-    tileWidth: opts.tileWidth ?? state.project.tileWidth,
-    tileHeight: opts.tileHeight ?? state.project.tileHeight,
+    tileWidth: opts.tileWidth ?? state.workspace.tileWidth,
+    tileHeight: opts.tileHeight ?? state.workspace.tileHeight,
     margin: opts.margin ?? 0,
     spacing: opts.spacing ?? 0,
-    firstgid: state.project.nextGid,
+    firstgid: state.workspace.nextGid,
   };
   computeGeometry(ts);
-  state.project.nextGid += ts.tileCount;
-  state.project.tilesets.push(ts);
+  state.workspace.nextGid += ts.tileCount;
+  state.workspace.tilesets.push(ts);
   state.images.set(id, img);
   if (state.ui.activeTilesetId === null) state.ui.activeTilesetId = id;
   emit('tilesets:change');
@@ -59,7 +59,7 @@ export async function addTileset(name, dataUrl, opts = {}) {
 export async function rehydrateImages() {
   state.images.clear();
   await Promise.all(
-    state.project.tilesets.map(async (ts) => {
+    state.workspace.tilesets.map(async (ts) => {
       if (!ts.image) return;
       const img = await loadImage(ts.image);
       state.images.set(ts.id, img);
@@ -84,7 +84,7 @@ export function tileSrcRect(ts, localIndex) {
 export function resolveGid(gid) {
   if (gid <= 0) return null;
   let ts = null;
-  for (const t of state.project.tilesets) if (gid >= t.firstgid) ts = t;
+  for (const t of state.workspace.tilesets) if (gid >= t.firstgid) ts = t;
   if (!ts) return null;
   return { tileset: ts, localIndex: gid - ts.firstgid };
 }

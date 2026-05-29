@@ -11,6 +11,11 @@
 
 ## 2026-05-30
 
+### 내부 / DX — 기술 부채 정리
+- **`state.project` Proxy 제거**: 공유 데이터는 `state.workspace`, 문서 데이터는 `activeDoc()`로 직접 접근. export/▶Play/렌더 경계만 read-only `projectSnapshot()` 사용. (데이터 흐름이 명시적으로 — 사용자 체감 변화 없음)
+- **TypeScript 점진 도입**: `tsconfig`(strict) + JSDoc 타입 + `// @ts-check` opt-in + `npm run typecheck`(turbo). 데이터 모델·핵심 SDK부터 타입 적용, 계약은 `@poc/core/types`. 파일 단위로 확장.
+- 문서: `MODULARIZATION.md`(부채 → 해결됨 갱신) · `REFACTOR-PROMPT.md`(재현·연장용 실행 프롬프트) 추가.
+
 ### UI 셸 — 도킹 패널 + 메뉴바
 - **도킹 패널**: 헤더 드래그로 좌/우 컬럼 도킹(드롭존 하이라이트 + 삽입선) 또는 플로팅(드래그·리사이즈). ✕ 닫기 · ▾ 접기 · ⤢ 플로팅. 컬럼 밖에 놓으면 **원위치 복귀**(분실 방지). 배치·숨김 영속.
 - **메뉴바**: File · Edit · View(패널 표시/숨김 + Reset layout) · Tools · Help. ▶ Play는 우측 버튼. (닫힌 패널은 View에서 다시 켬)

@@ -157,7 +157,7 @@ export function render() {
 let keepTagFocus = false; // re-focus the tag input after a render triggered by add
 
 function registry() {
-  return state.project.tagRegistry || (state.project.tagRegistry = []);
+  return state.workspace.tagRegistry || (state.workspace.tagRegistry = []);
 }
 // Register a tag and all its ancestors so "Terrain.Water.Deep" also offers
 // "Terrain" and "Terrain.Water" in autocomplete. Kept sorted, deduped.
@@ -401,7 +401,7 @@ function mutateProject(fn) {
 // Run cb on every tile's tags array across all tilesets; cb returns the new
 // array (empty/undefined removes the `tags` key). Prunes emptied tiles.
 function eachTileTags(cb) {
-  for (const ts of state.project.tilesets) {
+  for (const ts of state.workspace.tilesets) {
     if (!ts.tiles) continue;
     for (const k of Object.keys(ts.tiles)) {
       const m = ts.tiles[k];
@@ -437,7 +437,7 @@ function renameTag(oldPathRaw, newPathRaw) {
   mutateProject(() => {
     const set = new Set();
     for (const t of registry()) for (const a of expandTag(rewritePrefix(t, oldP, newP))) set.add(a);
-    state.project.tagRegistry = [...set].sort((a, b) => a.localeCompare(b));
+    state.workspace.tagRegistry = [...set].sort((a, b) => a.localeCompare(b));
     eachTileTags((tags) => dedupe(tags.map((t) => rewritePrefix(t, oldP, newP))));
   });
 }
@@ -447,7 +447,7 @@ function deleteTag(pathRaw) {
   const p = normalizeTag(pathRaw);
   if (!p) return;
   mutateProject(() => {
-    state.project.tagRegistry = registry().filter((t) => !isSelfOrDesc(t, p));
+    state.workspace.tagRegistry = registry().filter((t) => !isSelfOrDesc(t, p));
     eachTileTags((tags) => tags.filter((t) => !isSelfOrDesc(t, p)));
   });
 }

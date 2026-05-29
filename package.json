@@ -21,9 +21,11 @@
     "preview:editor": "turbo run preview --filter=@poc/editor",
     "preview:game": "turbo run preview --filter=@poc/game",
     "bundle:demo": "node tools/make-demo-bundle.mjs",
-    "tileset:sample": "node tools/make-sample-tileset.js"
+    "tileset:sample": "node tools/make-sample-tileset.js",
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
-    "turbo": "^2.3.0"
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.2"
   }
 }

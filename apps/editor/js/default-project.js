@@ -1,7 +1,7 @@
 // First-run starter scene: loads the two bundled sample tilesets and paints a
 // pleasant little map so the editor isn't empty on a fresh open. Used only when
 // there's no autosaved project to restore.
-import { state } from './state.js';
+import { state, projectSnapshot } from './state.js';
 import { addTileset } from './tileset.js';
 
 // Sample tilesets shipped in the editor's public/ dir (served at /samples).
@@ -30,7 +30,7 @@ export async function buildDefaultProject() {
     await addTileset(s.name, url);
   }
 
-  const P = state.project;
+  const P = projectSnapshot();
   const ts = P.tilesets[0];
   if (!ts) return; // fetch failed — leave the project empty
 
