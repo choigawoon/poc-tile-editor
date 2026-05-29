@@ -47,11 +47,11 @@ Dependency chain: `0 → 1 → 2` and `0 → 1 → 3 → 4`.
 - [ ] ⚠️ browser eyeball pending (tab bar render + stage layout) — check on dev server
 - [x] commit
 
-### ▶ CURRENT — Phase 2 — test tileset + load & test  (tileset asset independent; testing needs P1)
-- [ ] richer programmatic test tileset (grass/wall/water/**door** markers) — extend `tools/make-sample-tileset.js`
-- [ ] (optional) genai-MCP art variant
-- [ ] paint test maps across tabs, tag/meta, ▶Play
-- [ ] verify + commit
+### ▶ CURRENT — Phase 2 — test tileset + load & test  (decision: BOTH)
+- [x] programmatic labeled test tileset: `tools/make-test-tileset.mjs` → `apps/editor/public/samples/test-tileset.png` (8×2=16 tiles: grass/flower/path/stone/water/deepwater/sand/ice · wall/wallbrick/tree/rock/lava/spikes/bridge/**door**). Separate file — default scene's tileset.png untouched. Load via ⊞/＋ (`/samples/test-tileset.png`).
+- [ ] genai-MCP art variant (deferred; reskin-swap onto the same 8×2 grid)
+- [ ] paint test maps across tabs, tag/meta, ▶Play (browser)
+- [ ] commit
 
 ### Phase 3 — patterns (separate; place as chunks)  (needs P0, P1)
 - [ ] `workspace.patterns[]`; edit a pattern like a map (kind flag); tabs split Maps | Patterns
