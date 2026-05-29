@@ -12,3 +12,6 @@ dist/
 # Exported artifacts produced at runtime
 /exports/
 *.tileproj.json
+
+# Mirrored demo bundle (generated)
+apps/game/public/bundles/

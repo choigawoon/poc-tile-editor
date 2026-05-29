@@ -109,7 +109,17 @@ if (existsSync(fileURLToPath(nightSrc))) {
   console.warn('  ! samples/tileset.night.png missing — run: node tools/make-tileset-variant.mjs night');
 }
 
+// Mirror the bundle into the game app's public dir so the Pixi game (Vite dev
+// server + `vite build`) can serve it — Vite only sees files under its app root.
+const gamePub = new URL('apps/game/public/bundles/demo/', root);
+mkdirSync(gamePub, { recursive: true });
+for (const f of ['map.json', 'tileset.day.png', 'tileset.night.png']) {
+  const srcF = new URL(f, outDir);
+  if (existsSync(fileURLToPath(srcF))) copyFileSync(fileURLToPath(srcF), fileURLToPath(new URL(f, gamePub)));
+}
+
 const solid = collision.filter(Boolean).length;
 console.log(`Bundle written → bundles/demo/  (map.json + tileset.day.png + tileset.night.png)`);
+console.log(`  mirrored → apps/game/public/bundles/demo/`);
 console.log(`  map ${W}x${H}, layers ${project.layers.length}, solid cells ${solid}, spawn (3,3)`);
 console.log(`  skins: day (default), night`);
