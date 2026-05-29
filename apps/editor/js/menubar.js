@@ -37,8 +37,7 @@ const MENUS = [
   {
     label: 'Tools', items: () => [
       { label: 'Import image as tiles…', action: proxy('btn-import-tiles') },
-      { label: '✨ Auto-build dungeon…', action: proxy('btn-autodungeon') },
-      { label: '⚄ Dungeon from my patterns…', action: proxy('btn-generate') },
+      { label: '⚄ Dungeon (PCG) panel', action: () => setPanelHidden('pcg', false) },
     ],
   },
 ];

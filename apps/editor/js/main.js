@@ -7,7 +7,7 @@ import { initTileMeta } from './tilemeta.js';
 import { initPanelResize } from './panel-resize.js';
 import { initMapTabs } from './maps.js';
 import { initDoors } from './doors.js';
-import { generateDungeon, autoDungeon } from './pcg.js';
+import { initPcgPanel } from './pcgpanel.js';
 import { initGenai } from './genai.js';
 import { initDock } from './dock.js';
 import { initMenuBar } from './menubar.js';
@@ -44,11 +44,11 @@ const els = {
   exportTarget: $('export-target'), btnExport: $('btn-export'),
   fileImage: $('file-image'), fileProject: $('file-project'),
   btnPlay: $('btn-play'),
-  btnGenerate: $('btn-generate'),
   tileMeta: $('tile-meta'),
   doorBlock: $('door-block'),
   doorPanel: $('door-panel'),
   genaiPanel: $('genai-panel'),
+  pcgPanel: $('pcg-panel'),
 };
 
 // ▶Play overlay elements + wiring
@@ -70,6 +70,7 @@ initPanelResize(document.querySelector('.layout'), renderPalette);
 initMapTabs(els.mapTabs);
 initDoors(els.doorBlock, els.doorPanel);
 initGenai(els.genaiPanel);
+initPcgPanel(els.pcgPanel);
 initDock(document);
 initMenuBar($('menubar'));
 
@@ -309,33 +310,6 @@ els.fileImage.onchange = async () => {
     renderPalette();
   } catch (err) { alert('Could not load image: ' + err.message); }
   els.fileImage.value = '';
-};
-
-els.btnGenerate.onclick = () => {
-  try {
-    if (!state.workspace.patterns.length) { alert('Create patterns with doors first (Patterns ＋ in the tab bar).'); return; }
-    const cols = clampInt(prompt('Dungeon width (rooms):', '4'), 1, 20);
-    if (!cols) return;
-    const rows = clampInt(prompt('Dungeon height (rooms):', '3'), 1, 20);
-    if (!rows) return;
-    const r = generateDungeon(cols, rows);
-    centerCamera();
-    flash(`Dungeon ${cols}×${rows} rooms · ${r.mapSize[0]}×${r.mapSize[1]} tiles${r.mismatches ? ` · ${r.mismatches} door mismatch` : ''}`);
-  } catch (err) { alert('Generate failed: ' + err.message); }
-};
-
-$('btn-autodungeon').onclick = () => {
-  try {
-    if (!state.workspace.tilesets.length) { alert('Add a tileset first (＋ in Tilesets).'); return; }
-    const cols = clampInt(prompt('Dungeon width (rooms):', '4'), 1, 16); if (!cols) return;
-    const rows = clampInt(prompt('Dungeon height (rooms):', '3'), 1, 16); if (!rows) return;
-    const rw = clampInt(prompt('Room width (tiles):', '7'), 3, 32); if (!rw) return;
-    const rh = clampInt(prompt('Room height (tiles):', String(rw)), 3, 32); if (!rh) return;
-    const r = autoDungeon(cols, rows, rw, rh);
-    centerCamera();
-    renderPalette();
-    flash(`Auto dungeon: ${cols}×${rows} rooms · ${r.mapSize[0]}×${r.mapSize[1]} tiles · ${r.roomTypes} room types → patterns`);
-  } catch (err) { alert('Auto dungeon failed: ' + err.message); }
 };
 
 els.btnImportTiles.onclick = () => els.fileImport.click();

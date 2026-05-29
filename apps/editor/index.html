@@ -37,8 +37,6 @@
         <option value="unity">Unity</option>
       </select>
       <button id="btn-export">Export</button>
-      <button id="btn-generate">⚄ Dungeon</button>
-      <button id="btn-autodungeon">Auto dungeon</button>
     </div>
   </header>
 
@@ -103,6 +101,10 @@
         <div class="field"><label>Rows</label><input id="map-rows" type="number" min="1" value="20" /></div>
         <button id="btn-resize" class="full">Apply size</button>
         <label class="check"><input type="checkbox" id="chk-grid" checked /> Show grid</label>
+      </section>
+      <section class="block dock-panel" data-dock="pcg">
+        <div class="block-head"><span>Dungeon (PCG)</span></div>
+        <div id="pcg-panel"></div>
       </section>
       <section class="block dock-panel" id="door-block" data-dock="doors">
         <div class="block-head"><span>Pattern doors</span></div>
