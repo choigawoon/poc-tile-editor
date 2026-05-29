@@ -1,12 +1,13 @@
 # Architecture — three separated roles
 
 This project deliberately splits responsibilities into three parts that only
-touch each other through one well-defined artifact: **the bundle**.
+touch each other through one well-defined artifact: **the bundle**. The
+directory layout mirrors these roles one-to-one:
 
 ```
 ┌──────────────────────┐     ┌─────────────────────┐     ┌──────────────────────┐
-│ ① AUTHORING TOOL     │     │ ② BUNDLE            │     │ ③ GAME RUNTIME       │
-│   (the editor)       │ ──▶ │   (the contract)    │ ──▶ │   (the example game) │
+│ ① editor/            │     │ ② bundles/          │     │ ③ game-runtime/      │
+│   (the tool)         │ ──▶ │   (the contract)    │ ──▶ │   (the example game) │
 │                      │     │                     │     │                      │
 │ where human intent   │     │ data + resources    │     │ just consumes it     │
 │ goes in: paint, fill,│     │ only, NO logic:     │     │ owns interpretation: │
@@ -15,6 +16,9 @@ touch each other through one well-defined artifact: **the bundle**.
 └──────────────────────┘     └─────────────────────┘     └──────────────────────┘
         tool's job ends here ──────┘         └────── game's job starts here
 ```
+
+The root `index.html` is a landing page that links to all three so the structure
+is graspable the moment you open the project.
 
 ## Why this split
 
@@ -29,6 +33,19 @@ assists — and the game is unaffected as long as it still emits a valid bundle.
 Change the game — new physics, entities, lighting — and the authoring side is
 unaffected.
 
+## ① The editor (`editor/`)
+
+```
+editor/
+  index.html        editor shell
+  css/style.css
+  js/               state · history · renderer · palette · tools · panels · project
+    exporters/      generic · tiled · godot · unity (+ dispatch)
+```
+
+Where the human's intent enters. Exports go through `editor/js/exporters/`; the
+*Generic* exporter is also the code path used to build the demo bundle below.
+
 ## ② The bundle (`bundles/demo/`)
 
 ```
@@ -38,8 +55,9 @@ bundles/demo/
   tileset.night.png   resource: same 8×8 grid, cool tone  (a reskin)
 ```
 
-`map.json` is produced by the **real Generic exporter** (`js/exporters/generic.js`)
-— the exact code path the editor's *Export* button uses. Built with:
+`map.json` is produced by the **real Generic exporter**
+(`editor/js/exporters/generic.js`) — the exact code path the editor's *Export*
+button uses. Built with:
 
 ```bash
 node tools/make-demo-bundle.mjs
@@ -77,7 +95,7 @@ game code**.
 
 Verified live: same `map.json`, same `game.js`, switching `tileset.day.png` →
 `tileset.night.png` shifted the average rendered tone from a warm grass-green
-`[88,133,76]` to a darker cool `[46,73,87]`. The map stayed identical.
+`[88,133,76]` to a darker cool `[35,67,64]`. The map stayed identical.
 
 ```bash
 # make an alternate-tone PNG with the identical grid:
@@ -101,7 +119,8 @@ column count and indices shift — that's a *different* tileset, not a reskin.
 ## Try it
 
 ```bash
-./serve.sh                       # http://localhost:8080
-# editor:  /index.html
+./serve.sh                            # http://localhost:8080
+# landing: /index.html                (links to all three roles)
+# editor:  /editor/index.html
 # game:    /game-runtime/index.html   (press T to toggle day/night)
 ```

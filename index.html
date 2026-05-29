@@ -3,87 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POC Tile Editor</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>POC Tile Editor — pipeline</title>
+  <style>
+    :root { --bg:#1e1f26; --panel:#262830; --border:#3a3d49; --text:#e6e7ea;
+      --muted:#9a9da8; --accent:#5b9cff; --gold:#ffd166; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 40px 24px 60px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 28px; }
+    .flow { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: stretch; gap: 0; }
+    .arrow { display: grid; place-items: center; color: var(--muted); font-size: 20px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
+    a.card:hover { border-color: var(--accent); }
+    .tag { font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+    .card h2 { font-size: 15px; margin: 0; }
+    .card .role { color: var(--gold); font-weight: 600; }
+    .card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .card .open { margin-top: auto; font-size: 12px; color: var(--accent); }
+    .card.static { opacity: .9; }
+    .files { margin-top: 36px; }
+    .files h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+    pre { background: #15161b; border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+      overflow: auto; font-size: 12px; line-height: 1.55; color: #cfd2da; }
+    .hl { color: var(--gold); }
+    .note { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    code { background: #15161b; border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+    @media (max-width: 720px) {
+      .flow { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); padding: 6px 0; }
+    }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">🧩 POC Tile Editor</div>
-    <div class="toolbar" id="toolbar">
-      <button class="tool" data-tool="brush" title="Brush (B)">🖌️</button>
-      <button class="tool" data-tool="eraser" title="Eraser (E)">🧽</button>
-      <button class="tool" data-tool="fill" title="Fill (G)">🪣</button>
-      <button class="tool" data-tool="rect" title="Rectangle (R)">▭</button>
-      <button class="tool" data-tool="picker" title="Picker (I)">💧</button>
+  <div class="wrap">
+    <h1>🧩 POC Tile Editor</h1>
+    <p class="sub">A tile pipeline split into three decoupled roles, joined only by a <b>bundle</b>.</p>
+
+    <div class="flow">
+      <a class="card" href="editor/index.html">
+        <span class="tag">role ①</span>
+        <h2><span class="role">Editor</span> — the tool</h2>
+        <p>Where human intent goes in: paint, fill, rect, layers. Exports to Godot / Unity / Tiled / Generic.</p>
+        <span class="open">Open editor →</span>
+      </a>
+      <div class="arrow">→</div>
+      <div class="card static">
+        <span class="tag">role ②</span>
+        <h2><span class="role">Bundle</span> — the contract</h2>
+        <p>Data + resources only, no logic: <code>map.json</code> (tile-id grid) + tileset PNG(s). The seam between tool and game.</p>
+        <span class="open" style="color:var(--muted)">bundles/demo/</span>
+      </div>
+      <div class="arrow">→</div>
+      <a class="card" href="game-runtime/index.html">
+        <span class="tag">role ③</span>
+        <h2><span class="role">Game</span> — the runtime</h2>
+        <p>Consumes a bundle and nothing else. Owns collision, player, camera, skins. Press <b>T</b> for day/night.</p>
+        <span class="open">Open demo game →</span>
+      </a>
     </div>
-    <div class="spacer"></div>
-    <div class="actions">
-      <button id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
-      <button id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
-      <span class="sep"></span>
-      <button id="btn-new">New</button>
-      <button id="btn-save">Save</button>
-      <button id="btn-load">Load</button>
-      <span class="sep"></span>
-      <select id="export-target" title="Export target">
-        <option value="generic">Generic JSON</option>
-        <option value="tiled">Tiled (.tmj)</option>
-        <option value="godot">Godot 4</option>
-        <option value="unity">Unity</option>
-      </select>
-      <button id="btn-export" class="primary">Export ⤓</button>
+
+    <div class="files">
+      <h3>Directory map</h3>
+      <pre>poc-tile-editor/
+├── <span class="hl">editor/</span>          ① the tool      index.html · css/ · js/ (+ js/exporters/)
+├── <span class="hl">bundles/</span>         ② the contract  demo/ → map.json + tileset.day.png + tileset.night.png
+├── <span class="hl">game-runtime/</span>    ③ the game      index.html · game.js   (depends only on a bundle)
+│
+├── engine-templates/   Godot (.gd) & Unity (.cs) runtime importers
+├── tools/              build scripts: make-demo-bundle · make-sample-tileset · make-tileset-variant
+├── samples/            source tilesets
+├── ARCHITECTURE.md     the three roles, the bundle contract, reskin rules
+└── README.md</pre>
+      <p class="note">
+        Served over http (ES modules): <code>./serve.sh</code> then open this page.
+        Rebuild the demo bundle with <code>node tools/make-demo-bundle.mjs</code>.
+      </p>
     </div>
-  </header>
-
-  <main class="layout">
-    <!-- Left: tilesets & palette -->
-    <aside class="panel left">
-      <section class="block">
-        <div class="block-head">
-          <span>Tilesets</span>
-          <button id="btn-add-tileset" class="mini" title="Add tileset image">＋</button>
-        </div>
-        <select id="tileset-select" class="full"></select>
-        <div class="tileset-meta" id="tileset-meta"></div>
-      </section>
-      <section class="block grow">
-        <div class="block-head"><span>Palette</span></div>
-        <div class="palette-wrap" id="palette-wrap">
-          <canvas id="palette-canvas"></canvas>
-        </div>
-      </section>
-    </aside>
-
-    <!-- Center: map canvas -->
-    <section class="stage" id="stage">
-      <canvas id="map-canvas"></canvas>
-      <div class="stage-hud" id="stage-hud">0, 0</div>
-    </section>
-
-    <!-- Right: layers & map props -->
-    <aside class="panel right">
-      <section class="block">
-        <div class="block-head"><span>Map</span></div>
-        <div class="field"><label>Tile W</label><input id="map-tilew" type="number" min="1" value="32" /></div>
-        <div class="field"><label>Tile H</label><input id="map-tileh" type="number" min="1" value="32" /></div>
-        <div class="field"><label>Cols</label><input id="map-cols" type="number" min="1" value="30" /></div>
-        <div class="field"><label>Rows</label><input id="map-rows" type="number" min="1" value="20" /></div>
-        <button id="btn-resize" class="full">Apply size</button>
-        <label class="check"><input type="checkbox" id="chk-grid" checked /> Show grid</label>
-      </section>
-      <section class="block grow">
-        <div class="block-head">
-          <span>Layers</span>
-          <button id="btn-add-layer" class="mini" title="Add layer">＋</button>
-        </div>
-        <ul class="layer-list" id="layer-list"></ul>
-      </section>
-    </aside>
-  </main>
-
-  <input type="file" id="file-image" accept="image/*" hidden />
-  <input type="file" id="file-project" accept=".json,application/json" hidden />
-
-  <script type="module" src="js/main.js"></script>
+  </div>
 </body>
 </html>

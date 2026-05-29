@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POC Tile Editor</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🧩 POC Tile Editor</div>
+    <div class="toolbar" id="toolbar">
+      <button class="tool" data-tool="brush" title="Brush (B)">🖌️</button>
+      <button class="tool" data-tool="eraser" title="Eraser (E)">🧽</button>
+      <button class="tool" data-tool="fill" title="Fill (G)">🪣</button>
+      <button class="tool" data-tool="rect" title="Rectangle (R)">▭</button>
+      <button class="tool" data-tool="picker" title="Picker (I)">💧</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
+      <button id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
+      <span class="sep"></span>
+      <button id="btn-new">New</button>
+      <button id="btn-save">Save</button>
+      <button id="btn-load">Load</button>
+      <span class="sep"></span>
+      <select id="export-target" title="Export target">
+        <option value="generic">Generic JSON</option>
+        <option value="tiled">Tiled (.tmj)</option>
+        <option value="godot">Godot 4</option>
+        <option value="unity">Unity</option>
+      </select>
+      <button id="btn-export" class="primary">Export ⤓</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Left: tilesets & palette -->
+    <aside class="panel left">
+      <section class="block">
+        <div class="block-head">
+          <span>Tilesets</span>
+          <button id="btn-add-tileset" class="mini" title="Add tileset image">＋</button>
+        </div>
+        <select id="tileset-select" class="full"></select>
+        <div class="tileset-meta" id="tileset-meta"></div>
+      </section>
+      <section class="block grow">
+        <div class="block-head"><span>Palette</span></div>
+        <div class="palette-wrap" id="palette-wrap">
+          <canvas id="palette-canvas"></canvas>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center: map canvas -->
+    <section class="stage" id="stage">
+      <canvas id="map-canvas"></canvas>
+      <div class="stage-hud" id="stage-hud">0, 0</div>
+    </section>
+
+    <!-- Right: layers & map props -->
+    <aside class="panel right">
+      <section class="block">
+        <div class="block-head"><span>Map</span></div>
+        <div class="field"><label>Tile W</label><input id="map-tilew" type="number" min="1" value="32" /></div>
+        <div class="field"><label>Tile H</label><input id="map-tileh" type="number" min="1" value="32" /></div>
+        <div class="field"><label>Cols</label><input id="map-cols" type="number" min="1" value="30" /></div>
+        <div class="field"><label>Rows</label><input id="map-rows" type="number" min="1" value="20" /></div>
+        <button id="btn-resize" class="full">Apply size</button>
+        <label class="check"><input type="checkbox" id="chk-grid" checked /> Show grid</label>
+      </section>
+      <section class="block grow">
+        <div class="block-head">
+          <span>Layers</span>
+          <button id="btn-add-layer" class="mini" title="Add layer">＋</button>
+        </div>
+        <ul class="layer-list" id="layer-list"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <input type="file" id="file-image" accept="image/*" hidden />
+  <input type="file" id="file-project" accept=".json,application/json" hidden />
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

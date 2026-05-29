@@ -73,24 +73,33 @@ Multiple tilesets are supported; each gets a contiguous gid range.
 
 ## Project structure
 
+The top level mirrors the three roles of the pipeline:
+
 ```
-index.html              # shell
-css/style.css
-js/
-  state.js              # central store + event bus
-  history.js            # undo/redo (snapshot-based)
-  tileset.js            # image load / slicing / gid resolution
-  renderer.js           # map canvas (camera, grid, layer compositing)
-  palette.js            # tileset viewer + tile selection
-  tools.js              # brush, eraser, fill, rect, picker
-  panels.js             # tilesets / layers / map-size UI
-  project.js            # save / load native project
-  main.js               # wiring: input, shortcuts, actions
-  exporters/            # generic, tiled, godot, unity + dispatch
-engine-templates/       # ready-to-use Godot & Unity importers
-tools/make-sample-tileset.js
-samples/tileset.png
+index.html              # landing page → links to all three roles
+│
+├── editor/             # ① the tool  (human intent goes in)
+│   ├── index.html      #   editor shell
+│   ├── css/style.css
+│   └── js/             #   state · history · renderer · palette · tools · panels · project · main
+│       └── exporters/  #   generic · tiled · godot · unity (+ dispatch)
+│
+├── bundles/demo/       # ② the contract  (data + resources, no logic)
+│   ├── map.json        #   placement data: layers of tile ids
+│   ├── tileset.day.png #   resource (bright tone)
+│   └── tileset.night.png  # same 8×8 grid, cool tone (a reskin)
+│
+├── game-runtime/       # ③ the game  (depends only on a bundle)
+│   ├── index.html
+│   └── game.js         #   loads a bundle; owns collision/player/camera/skins
+│
+├── engine-templates/   # ready-to-use Godot (.gd) & Unity (.cs) importers
+├── tools/              # make-demo-bundle · make-sample-tileset · make-tileset-variant
+├── samples/            # source tilesets
+└── ARCHITECTURE.md     # the three roles, the bundle contract, reskin rules
 ```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full role breakdown.
 
 ## Git branches
 
