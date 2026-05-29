@@ -4,6 +4,16 @@
 import { addTileset } from './tileset.js';
 import { importImageAsTiles } from './import-image.js';
 
+// Starter prompts — pick one, tweak a few words, generate. All push toward an
+// edge-to-edge grid (no gutters) so slicing into tiles lines up.
+const PRESETS = [
+  { label: 'Overworld terrain', text: 'top-down 2D RPG overworld tileset, 4x4 grid of seamless terrain tiles: grass, dark grass, dirt path, sand, shallow water, deep water, stone, flowers — 16-bit pixel art, edge-to-edge, no gaps or margins, flat top-down view, no text' },
+  { label: 'Dungeon', text: 'top-down fantasy dungeon tileset, 4x4 grid: stone floor, cracked floor, brick wall, mossy wall, wooden door, iron door, lava, water — pixel art, edge-to-edge tiles, no gaps, no text' },
+  { label: 'Sci-fi facility', text: 'top-down sci-fi facility tileset, 4x4 grid: metal floor, grated floor, panel wall, vent, hazard stripes, glass, blast door, control panel — clean pixel art, edge-to-edge, no margins, no text' },
+  { label: 'Forest / nature', text: 'top-down nature tileset, 4x4 grid: grass, tall grass, bush, tree top, dirt, mud, rock, pond — cozy 16-bit pixel art, seamless edge-to-edge tiles, no gaps, no text' },
+  { label: 'Single seamless tile', text: 'one seamless tileable top-down grass texture, pixel art game tile, fills the whole image edge to edge, no border, no text' },
+];
+
 let host, lastDataUrl = null;
 
 export function initGenai(el) { host = el; render(); }
@@ -16,6 +26,23 @@ function render() {
   ta.className = 'genai-prompt';
   ta.rows = 3;
   ta.placeholder = 'e.g. top-down 4x4 grid of seamless terrain tiles: grass, water, stone, sand — pixel art, no gaps';
+
+  // preset prompts — fill the box, then tweak
+  const presetSel = document.createElement('select');
+  presetSel.className = 'full genai-presets';
+  const ph = document.createElement('option');
+  ph.value = ''; ph.textContent = 'Insert a sample prompt…';
+  presetSel.appendChild(ph);
+  PRESETS.forEach((p, i) => {
+    const o = document.createElement('option');
+    o.value = String(i); o.textContent = p.label;
+    presetSel.appendChild(o);
+  });
+  presetSel.onchange = () => {
+    const p = PRESETS[+presetSel.value];
+    if (p) { ta.value = p.text; ta.focus(); }
+    presetSel.value = '';
+  };
 
   const row = document.createElement('div');
   row.className = 'field';
@@ -85,5 +112,5 @@ function render() {
     } catch (e) { status.textContent = 'Slice failed: ' + e.message; }
   };
 
-  host.append(ta, row, gen, status, prev, actions);
+  host.append(presetSel, ta, row, gen, status, prev, actions);
 }
