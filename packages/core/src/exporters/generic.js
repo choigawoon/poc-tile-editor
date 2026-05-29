@@ -1,5 +1,7 @@
 // Engine-agnostic, human-readable tilemap format.
 // 0 = empty cell. Tile ids are global (gid): tileset.firstId + localIndex.
+import { slug, imageName } from '../gid.js';
+
 export function exportGeneric(project) {
   const data = {
     format: 'generic-tilemap',
@@ -37,10 +39,4 @@ function to2D(flat, w) {
   const rows = [];
   for (let i = 0; i < flat.length; i += w) rows.push(flat.slice(i, i + w));
   return rows;
-}
-export function slug(s) {
-  return (s || 'tilemap').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'tilemap';
-}
-export function imageName(name) {
-  return /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(name) ? name : `${slug(name)}.png`;
 }

@@ -1,0 +1,12 @@
+{
+  "name": "@poc/core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Shared tile-format SDK: gid math, tile geometry, and engine exporters. No DOM, no app state — usable by both the editor and the game.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./exporters": "./src/exporters/index.js"
+  },
+  "files": ["src"]
+}

@@ -1,8 +1,7 @@
 // Unity export. Emits a JSON consumed by engine-templates/unity/TileMapImporter.cs,
 // which slices the tileset texture into sprites and populates a Grid + Tilemap.
 // Cells reference a tileset index + the sprite index within that tileset.
-import { slug, imageName } from './generic.js';
-import { resolveGid } from '../tileset.js';
+import { slug, imageName, resolveGid } from '../gid.js';
 
 export function exportUnity(project) {
   const tsIndex = new Map();
@@ -44,7 +43,7 @@ function layerCells(layer, project, tsIndex) {
   for (let i = 0; i < layer.data.length; i++) {
     const gid = layer.data[i];
     if (!gid) continue;
-    const r = resolveGid(gid);
+    const r = resolveGid(project.tilesets, gid);
     if (!r) continue;
     const col = i % project.mapWidth;
     const row = Math.floor(i / project.mapWidth);

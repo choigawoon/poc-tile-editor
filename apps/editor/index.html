@@ -32,6 +32,8 @@
         <option value="unity">Unity</option>
       </select>
       <button id="btn-export" class="primary">Export ⤓</button>
+      <span class="sep"></span>
+      <button id="btn-play" class="primary" title="Play the current map (live)">▶ Play</button>
     </div>
   </header>
 
@@ -83,6 +85,20 @@
 
   <input type="file" id="file-image" accept="image/*" hidden />
   <input type="file" id="file-project" accept=".json,application/json" hidden />
+
+  <!-- ▶Play: embeds the game runtime and feeds it the live map as a bundle -->
+  <div class="play-overlay" id="play-overlay" hidden>
+    <div class="play-window">
+      <div class="play-bar">
+        <b>▶ Live Play</b>
+        <span id="play-status" class="play-status">starting…</span>
+        <span class="spacer"></span>
+        <button id="btn-play-reload" title="Re-send the current map">⟳ Reload map</button>
+        <button id="btn-play-close" title="Stop (Esc)">✕ Close</button>
+      </div>
+      <iframe id="play-frame" class="play-frame" title="game" allow="autoplay"></iframe>
+    </div>
+  </div>
 
   <script type="module" src="js/main.js"></script>
 </body>

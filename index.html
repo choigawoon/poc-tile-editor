@@ -10,10 +10,10 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text);
       font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
-    .wrap { max-width: 880px; margin: 0 auto; padding: 40px 24px 60px; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px 60px; }
     h1 { font-size: 22px; margin: 0 0 4px; }
     .sub { color: var(--muted); margin: 0 0 28px; }
-    .flow { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: stretch; gap: 0; }
+    .flow { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: stretch; }
     .arrow { display: grid; place-items: center; color: var(--muted); font-size: 20px; }
     .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
       padding: 16px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
@@ -40,14 +40,14 @@
 <body>
   <div class="wrap">
     <h1>🧩 POC Tile Editor</h1>
-    <p class="sub">A tile pipeline split into three decoupled roles, joined only by a <b>bundle</b>.</p>
+    <p class="sub">A tile pipeline split into three decoupled roles, joined only by a <b>bundle</b> and a shared <code>@poc/core</code> SDK. Vite + PixiJS monorepo.</p>
 
     <div class="flow">
-      <a class="card" href="editor/index.html">
+      <a class="card" href="http://localhost:5173/">
         <span class="tag">role ①</span>
         <h2><span class="role">Editor</span> — the tool</h2>
-        <p>Where human intent goes in: paint, fill, rect, layers. Exports to Godot / Unity / Tiled / Generic.</p>
-        <span class="open">Open editor →</span>
+        <p>Paint, fill, rect, layers; autosave; ▶Play the live map. Exports to Godot / Unity / Tiled / Generic.</p>
+        <span class="open">Open editor → <small style="color:var(--muted)">(<code>npm run dev</code> → :5173)</small></span>
       </a>
       <div class="arrow">→</div>
       <div class="card static">
@@ -57,29 +57,32 @@
         <span class="open" style="color:var(--muted)">bundles/demo/</span>
       </div>
       <div class="arrow">→</div>
-      <a class="card" href="game-runtime/index.html">
+      <a class="card" href="http://localhost:5175/">
         <span class="tag">role ③</span>
         <h2><span class="role">Game</span> — the runtime</h2>
-        <p>Consumes a bundle and nothing else. Owns collision, player, camera, skins. Press <b>T</b> for day/night.</p>
-        <span class="open">Open demo game →</span>
+        <p>PixiJS/WebGL. Consumes a bundle and nothing else. Owns collision, player, camera, skins. Press <b>T</b> for day/night.</p>
+        <span class="open">Open demo game → <small style="color:var(--muted)">(<code>npm run dev:game</code> → :5175)</small></span>
       </a>
     </div>
 
     <div class="files">
       <h3>Directory map</h3>
       <pre>poc-tile-editor/
-├── <span class="hl">editor/</span>          ① the tool      index.html · css/ · js/ (+ js/exporters/)
-├── <span class="hl">bundles/</span>         ② the contract  demo/ → map.json + tileset.day.png + tileset.night.png
-├── <span class="hl">game-runtime/</span>    ③ the game      index.html · game.js   (depends only on a bundle)
+├── <span class="hl">packages/core/</span>   🔑 @poc/core    shared SDK: gid math + exporters (no DOM)
+├── <span class="hl">apps/editor/</span>     ① the tool      Vite app · ▶Play · autosave
+├── <span class="hl">bundles/</span>         ② the contract  demo/ → map.json + tileset.day/night.png
+├── <span class="hl">apps/game/</span>       ③ the game      Vite + PixiJS · consumes a bundle
 │
 ├── engine-templates/   Godot (.gd) & Unity (.cs) runtime importers
-├── tools/              build scripts: make-demo-bundle · make-sample-tileset · make-tileset-variant
+├── tools/              make-demo-bundle · make-tileset-variant · sync-dist-bundle
 ├── samples/            source tilesets
 ├── ARCHITECTURE.md     the three roles, the bundle contract, reskin rules
 └── README.md</pre>
       <p class="note">
-        Served over http (ES modules): <code>./serve.sh</code> then open this page.
-        Rebuild the demo bundle with <code>node tools/make-demo-bundle.mjs</code>.
+        Dev (HMR): <code>npm install</code>, then <code>npm run dev</code> (editor :5173) and
+        <code>npm run dev:game</code> (game :5175). In the editor, hit <b>▶ Play</b> to run
+        the live map. Release: <code>npm run build:all</code>. Rebuild the demo bundle:
+        <code>npm run bundle:demo</code>.
       </p>
     </div>
   </div>
