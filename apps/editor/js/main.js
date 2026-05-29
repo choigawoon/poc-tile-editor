@@ -8,6 +8,8 @@ import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
 import { paintAt, eraseAt, fillAt, rectFill, pickAt } from './tools.js';
 import { newProject, saveProject, loadProjectFromText } from './project.js';
 import { runExport } from './exporters/index.js';
+import { restore, scheduleSave, clearSaved } from './persist.js';
+import { buildDefaultProject } from './default-project.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -48,6 +50,10 @@ function requestRender() {
   .forEach((e) => on(e, requestRender));
 on('history:change', updateUndoRedo);
 
+// autosave to localStorage on any document change (debounced inside scheduleSave)
+['map:change', 'layers:change', 'tilesets:change', 'project:replaced']
+  .forEach((e) => on(e, scheduleSave));
+
 // ---- stage sizing ----
 function fitStage() {
   const r = els.stage.getBoundingClientRect();
@@ -59,9 +65,21 @@ new ResizeObserver(fitStage).observe(els.stage);
 // center the map on first paint
 on('project:replaced', centerCamera);
 
-// first paint (after render scheduling + listeners are wired)
+// ---- startup: restore the autosaved project, else build the default scene ----
 fitStage();
-emit('project:replaced');
+(async () => {
+  const restored = await restore();
+  if (!restored) {
+    try { await buildDefaultProject(); } catch (e) { console.warn('default project failed:', e.message); }
+  }
+  emit('project:replaced');
+  emit('tilesets:change');
+  emit('selection:change');
+  renderPalette();
+  centerCamera();
+  requestRender();
+})();
+
 function centerCamera() {
   const r = els.stage.getBoundingClientRect();
   const mw = state.project.mapWidth * state.project.tileWidth;
@@ -204,6 +222,7 @@ updateUndoRedo();
 
 els.btnNew.onclick = () => {
   if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
+  clearSaved();
   newProject();
 };
 els.btnSave.onclick = saveProject;
