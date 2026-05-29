@@ -1,0 +1,143 @@
+:root {
+  --bg: #1e1f26;
+  --panel: #262830;
+  --panel-2: #2e313b;
+  --border: #3a3d49;
+  --text: #e6e7ea;
+  --muted: #9a9da8;
+  --accent: #5b9cff;
+  --accent-2: #3a6fd8;
+  --danger: #e0556b;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+button, select, input {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+}
+
+button {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+button:hover { background: #393c47; }
+button.primary { background: var(--accent-2); border-color: var(--accent); }
+button.primary:hover { background: var(--accent); }
+button.mini { padding: 1px 7px; line-height: 1; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+select, input[type="number"] {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 6px;
+}
+.full { width: 100%; }
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 600; }
+.toolbar { display: flex; gap: 4px; }
+.tool {
+  width: 34px; height: 30px;
+  display: grid; place-items: center;
+  font-size: 15px;
+}
+.tool.active { background: var(--accent-2); border-color: var(--accent); }
+.spacer { flex: 1; }
+.actions { display: flex; align-items: center; gap: 6px; }
+.actions .sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 220px;
+  height: calc(100% - 46px);
+}
+.panel {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel.left { border-right: 1px solid var(--border); }
+.panel.right { border-left: 1px solid var(--border); }
+
+.block {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.block.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.block-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 600; color: var(--muted); text-transform: uppercase;
+  font-size: 11px; letter-spacing: .5px; margin-bottom: 8px;
+}
+.tileset-meta { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+.field {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
+.field label { width: 48px; color: var(--muted); }
+.field input { flex: 1; }
+.check { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--muted); }
+
+/* Palette */
+.palette-wrap {
+  flex: 1; min-height: 0; overflow: auto;
+  background: #15161b; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 4px;
+}
+#palette-canvas { display: block; image-rendering: pixelated; cursor: crosshair; }
+
+/* Stage */
+.stage {
+  position: relative;
+  background:
+    repeating-conic-gradient(#202126 0% 25%, #1a1b20 0% 50%) 0 / 24px 24px;
+  overflow: hidden;
+}
+#map-canvas { display: block; image-rendering: pixelated; }
+.stage-hud {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(0,0,0,.55); padding: 3px 8px; border-radius: var(--radius);
+  font-variant-numeric: tabular-nums; color: var(--muted); pointer-events: none;
+}
+
+/* Layers */
+.layer-list { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+.layer-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px; border: 1px solid transparent; border-radius: var(--radius);
+  margin-bottom: 4px; background: var(--panel-2);
+}
+.layer-item.active { border-color: var(--accent); }
+.layer-item .vis { cursor: pointer; width: 18px; text-align: center; }
+.layer-item .name { flex: 1; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-item .name input { width: 100%; }
+.layer-item .lbtn { padding: 1px 6px; font-size: 12px; }
+.layer-item.dragging { opacity: .4; }

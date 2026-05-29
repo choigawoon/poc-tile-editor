@@ -1,0 +1,12 @@
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Node (only used by the sample-tileset tool)
+node_modules/
+
+# Exported artifacts produced at runtime
+/exports/
+*.tileproj.json
