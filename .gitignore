@@ -4,8 +4,10 @@
 .vscode/
 .idea/
 
-# Node (only used by the sample-tileset tool)
+# Node / build
 node_modules/
+dist/
+*.tsbuildinfo
 
 # Exported artifacts produced at runtime
 /exports/

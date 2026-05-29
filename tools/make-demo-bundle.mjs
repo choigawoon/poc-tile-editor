@@ -8,7 +8,7 @@
 //   node tools/make-demo-bundle.mjs
 import { writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { exportGeneric } from '../editor/js/exporters/generic.js';
+import { exportGeneric } from '../packages/core/src/exporters/generic.js';
 
 const root = new URL('../', import.meta.url);
 const W = 40, H = 25, TILE = 32;

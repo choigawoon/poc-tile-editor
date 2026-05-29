@@ -1,0 +1,21 @@
+{
+  "name": "poc-tile-editor-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tile pipeline monorepo: editor (tool) + game (runtime) + shared core, joined by bundles.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "bundle:demo": "node tools/make-demo-bundle.mjs",
+    "tileset:sample": "node tools/make-sample-tileset.js"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
