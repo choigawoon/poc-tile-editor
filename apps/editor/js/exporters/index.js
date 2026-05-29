@@ -1,21 +1,9 @@
-// Export dispatch + browser download helpers.
-import { exportGeneric } from './generic.js';
-import { exportTiled } from './tiled.js';
-import { exportGodot } from './godot.js';
-import { exportUnity } from './unity.js';
-import { imageName } from './generic.js';
-
-const EXPORTERS = {
-  generic: exportGeneric,
-  tiled: exportTiled,
-  godot: exportGodot,
-  unity: exportUnity,
-};
+// Editor-side export glue: pure exporters come from @poc/core; this module adds
+// the browser download behavior (Blobs, <a download>) the game runtime doesn't need.
+import { exportProject, imageName } from '@poc/core';
 
 export function runExport(target, project) {
-  const fn = EXPORTERS[target];
-  if (!fn) throw new Error(`Unknown export target: ${target}`);
-  const { filename, content } = fn(project);
+  const { filename, content } = exportProject(target, project);
   downloadText(filename, content);
   // Also export the tileset PNGs so the data file is usable out of the box.
   for (const ts of project.tilesets) {

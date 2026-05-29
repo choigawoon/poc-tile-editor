@@ -1,6 +1,6 @@
 // Tiled map JSON (.tmj) — the de-facto interchange format.
 // Importable by Godot (built-in / plugins) and Unity (SuperTiled2Unity).
-import { slug, imageName } from './generic.js';
+import { slug, imageName } from '../gid.js';
 
 export function exportTiled(project) {
   const map = {

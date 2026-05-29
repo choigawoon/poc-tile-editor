@@ -9,8 +9,9 @@
       font-family: -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
     .wrap { display: flex; flex-direction: column; height: 100%; }
     .bar { padding: 8px 12px; background: #1e1f26; border-bottom: 1px solid #3a3d49;
-      display: flex; gap: 12px; align-items: center; }
+      display: flex; gap: 10px; align-items: center; }
     .bar b { color: #ffd166; }
+    .badge { color: #5b9cff; font-size: 11px; border: 1px solid #3a3d49; border-radius: 4px; padding: 1px 6px; }
     #hud { color: #9a9da8; font-size: 12px; font-variant-numeric: tabular-nums; }
     .stage { flex: 1; min-height: 0; display: grid; place-items: center; }
     #game { background: #0c0d11; image-rendering: pixelated;
@@ -21,12 +22,13 @@
   <div class="wrap">
     <div class="bar">
       <b>🎮 Demo Game</b>
+      <span class="badge">PixiJS · WebGL</span>
       <span id="hud">loading bundle…</span>
     </div>
     <div class="stage">
       <canvas id="game" width="960" height="600"></canvas>
     </div>
   </div>
-  <script type="module" src="game.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
