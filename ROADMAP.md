@@ -49,9 +49,9 @@ Dependency chain: `0 → 1 → 2` and `0 → 1 → 3 → 4`.
 
 ### ▶ CURRENT — Phase 2 — test tileset + load & test  (decision: BOTH)
 - [x] programmatic labeled test tileset: `tools/make-test-tileset.mjs` → `apps/editor/public/samples/test-tileset.png` (8×2=16 tiles: grass/flower/path/stone/water/deepwater/sand/ice · wall/wallbrick/tree/rock/lava/spikes/bridge/**door**). Separate file — default scene's tileset.png untouched. Load via ⊞/＋ (`/samples/test-tileset.png`).
-- [ ] genai-MCP art variant (deferred; reskin-swap onto the same 8×2 grid)
+- [x] genai-MCP integration — went beyond a static variant: an **in-editor "✨ AI tileset" panel** (`genai.js`) + a Vite dev middleware bridge (`genai-bridge.mjs`) that speaks MCP from Node (no CORS) at `POST /api/genai/generate`. Prompt → generate → preview → "Add as tileset" / "Slice into tiles". Bridge verified end-to-end via a real generation. Dev-only (`npm run dev`).
 - [ ] paint test maps across tabs, tag/meta, ▶Play (browser)
-- [ ] commit
+- [x] commit
 
 ### Phase 3 — patterns (separate; place as chunks)  (DONE ✓)
 - [x] `state.project` proxy generalized to `activeDoc()` (map OR pattern) via `ui.activeKind`; patterns are map-shaped docs (+ empty `doors`) so the whole editor edits them unchanged

@@ -140,6 +140,11 @@ input::placeholder { color: var(--muted); }
 .tag-mixed { color: var(--muted); font-size: 11px; font-style: italic; }
 .tag-input { width: 100%; }
 
+/* AI tileset panel */
+.genai-prompt { width: 100%; resize: vertical; margin-bottom: 6px; font-family: inherit; }
+.genai-prev { width: 100%; image-rendering: pixelated; border: 1px solid var(--border); border-radius: var(--radius); margin: 6px 0; }
+.genai-actions { display: flex; flex-direction: column; gap: 4px; }
+
 /* tag hierarchy tree */
 .tag-tree {
   max-height: 220px; overflow: auto;

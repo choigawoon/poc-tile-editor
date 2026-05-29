@@ -8,6 +8,7 @@ import { initPanelResize } from './panel-resize.js';
 import { initMapTabs } from './maps.js';
 import { initDoors } from './doors.js';
 import { generateDungeon } from './pcg.js';
+import { initGenai } from './genai.js';
 import { addTileset, fileToDataUrl } from './tileset.js';
 import { importImageAsTiles } from './import-image.js';
 import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
@@ -45,6 +46,7 @@ const els = {
   tileMeta: $('tile-meta'),
   doorBlock: $('door-block'),
   doorPanel: $('door-panel'),
+  genaiPanel: $('genai-panel'),
 };
 
 // ▶Play overlay elements + wiring
@@ -65,6 +67,7 @@ initTileMeta(els.tileMeta);
 initPanelResize(document.querySelector('.layout'), renderPalette);
 initMapTabs(els.mapTabs);
 initDoors(els.doorBlock, els.doorPanel);
+initGenai(els.genaiPanel);
 
 document.getElementById('palette-zoom-in').onclick = () => setPaletteZoom(1);
 document.getElementById('palette-zoom-out').onclick = () => setPaletteZoom(-1);
