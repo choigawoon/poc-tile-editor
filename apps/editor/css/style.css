@@ -105,6 +105,23 @@ select, input[type="number"] {
 .field label { width: 48px; color: var(--muted); }
 .field input { flex: 1; }
 .check { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--muted); }
+.meta-row .meta-key { flex: 0 0 36%; }
+.meta-row .lbtn { padding: 1px 6px; font-size: 12px; }
+
+/* gameplay tags */
+.tag-widget { margin: 8px 0; }
+.tag-label { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+.tag-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1px 4px 1px 8px; font-size: 11px; max-width: 100%;
+}
+.tag-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag-chip button { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; font-size: 13px; line-height: 1; }
+.tag-chip button:hover { color: #ff5d5d; }
+.tag-mixed { color: var(--muted); font-size: 11px; font-style: italic; }
+.tag-input { width: 100%; }
 
 /* Palette */
 .palette-wrap {

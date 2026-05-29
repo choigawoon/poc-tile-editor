@@ -9,7 +9,7 @@
 //  and this exact code renders a different world.
 // ─────────────────────────────────────────────────────────────────────────
 import { Application, Texture, Rectangle, Sprite, Container, Graphics } from 'pixi.js';
-import { tileSrcRect } from '@poc/core';
+import { tileSrcRect, gidMeta, gidHasTag, tileTags } from '@poc/core';
 import { loadBundleFromUrl, loadInlineBundle, loadImage, resolveCell } from './bundle.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -30,7 +30,7 @@ export async function createGame(canvas, hud) {
   const state = {
     map: null, images: null, base: '', skinImages: null,
     TW: 32, TH: 32, mapPxW: 0, mapPxH: 0,
-    collision: null, camera: { x: 0, y: 0 },
+    solidGrid: null, camera: { x: 0, y: 0 },
     p: { x: 0, y: 0, w: 20, h: 20, speed: 140 },
     skins: [], skinIndex: 0,
     textureCache: new Map(), // tileset image element -> base Texture
@@ -95,10 +95,50 @@ export async function createGame(canvas, hud) {
     player.rect(state.p.w - 7, 6, 3, 4).fill(0x1e1f26);
   }
 
+  // Precompute which cells block movement. A cell is solid if EITHER (legacy)
+  // it's non-empty on a layer named "Collision", OR (type metadata) any tile
+  // placed there is marked `solid` in its tileset. The metadata path means a
+  // wall is solid wherever it's painted — no dedicated collision layer needed.
+  function buildCollision() {
+    const m = state.map;
+    const grid = new Array(m.width * m.height).fill(false);
+    const collisionLayer = m.layers.find((l) => /collision/i.test(l.name)) || null;
+    for (const layer of m.layers) {
+      const legacy = layer === collisionLayer;
+      for (let r = 0; r < m.height; r++) {
+        for (let c = 0; c < m.width; c++) {
+          const gid = layer.data[r][c];
+          if (!gid) continue;
+          // solid via: legacy Collision layer · `solid` flag · or a
+          // Movement.Blocked gameplay tag (tags can drive behavior too)
+          if (legacy || gidMeta(m.tilesets, gid).solid || gidHasTag(m.tilesets, gid, 'Movement.Blocked'))
+            grid[r * m.width + c] = true;
+        }
+      }
+    }
+    return grid;
+  }
+
   function solid(cx, cy) {
-    const { map, collision } = state;
+    const { map, solidGrid } = state;
     if (cx < 0 || cy < 0 || cx >= map.width || cy >= map.height) return true;
-    return !!(collision && collision.data[cy][cx]);
+    return !!(solidGrid && solidGrid[cy * map.width + cx]);
+  }
+
+  // Merged gameplay tags of every tile stacked on a cell (across layers). The
+  // game's runtime read path for tile classification — e.g. damage on
+  // tagsAt(cx,cy).some(t => t.startsWith('Hazard')). Exposed on window.__game.
+  function tagsAt(cx, cy) {
+    const m = state.map;
+    if (!m || cx < 0 || cy < 0 || cx >= m.width || cy >= m.height) return [];
+    const out = new Set();
+    for (const layer of m.layers) {
+      const gid = layer.data[cy][cx];
+      if (!gid) continue;
+      const info = resolveCell(gid, m.tilesets);
+      if (info) for (const t of tileTags(info.ts, info.local)) out.add(t);
+    }
+    return [...out];
   }
   function blocked(nx, ny) {
     const { p, TW, TH } = state;
@@ -176,7 +216,7 @@ export async function createGame(canvas, hud) {
     const m = loaded.map;
     state.TW = m.tileWidth; state.TH = m.tileHeight;
     state.mapPxW = m.width * m.tileWidth; state.mapPxH = m.height * m.tileHeight;
-    state.collision = m.layers.find((l) => /collision/i.test(l.name)) || null;
+    state.solidGrid = buildCollision();
     state.skins = m.game?.skins ?? [];
     state.skinIndex = 0;
 
@@ -190,7 +230,7 @@ export async function createGame(canvas, hud) {
     updateHud();
 
     // expose for inspection/testing
-    window.__game = { map: state.map, player: state.p, camera: state.camera, solid, renderer: 'pixi' };
+    window.__game = { map: state.map, player: state.p, camera: state.camera, solid, tagsAt, renderer: 'pixi' };
   }
 
   function resize(w, h) { app.renderer.resize(w, h); }

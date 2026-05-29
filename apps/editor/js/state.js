@@ -31,8 +31,21 @@ export function createProject(opts = {}) {
     nextGid: 1,
     tilesets: [],
     layers: [makeLayer('Layer 1', mapWidth * mapHeight, 0)],
+    // Project-wide gameplay-tag dictionary (Unreal GameplayTags.ini analogue):
+    // powers autocomplete and keeps a shared taxonomy. Grows as users type.
+    tagRegistry: STARTER_TAGS.slice(),
   };
 }
+
+// A small starter taxonomy so tag autocomplete isn't empty and teaches the
+// dot-hierarchy format. Users extend it freely just by typing new tags.
+const STARTER_TAGS = [
+  'Terrain.Ground', 'Terrain.Water', 'Terrain.Wall',
+  'Surface.Grass', 'Surface.Sand', 'Surface.Ice', 'Surface.Mud',
+  'Hazard.Lava', 'Hazard.Spikes', 'Hazard.Drown',
+  'Movement.Blocked', 'Movement.Slow',
+  'Trigger.Door', 'Trigger.Switch', 'Trigger.Teleport',
+];
 
 export function makeLayer(name, cellCount, id) {
   return {

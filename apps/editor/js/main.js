@@ -3,6 +3,7 @@ import { state, on, emit } from './state.js';
 import { initRenderer, render, resizeCanvas, screenToTile, setHover, setRectPreview } from './renderer.js';
 import { initPalette, renderPalette } from './palette.js';
 import { initPanels } from './panels.js';
+import { initTileMeta } from './tilemeta.js';
 import { addTileset, fileToDataUrl } from './tileset.js';
 import { pushHistory, undo, redo, canUndo, canRedo } from './history.js';
 import { paintAt, eraseAt, fillAt, rectFill, pickAt } from './tools.js';
@@ -32,6 +33,7 @@ const els = {
   exportTarget: $('export-target'), btnExport: $('btn-export'),
   fileImage: $('file-image'), fileProject: $('file-project'),
   btnPlay: $('btn-play'),
+  tileMeta: $('tile-meta'),
 };
 
 // ▶Play overlay elements + wiring
@@ -48,6 +50,7 @@ initPlay({
 initRenderer(els.mapCanvas);
 initPalette(els.paletteCanvas);
 initPanels(els);
+initTileMeta(els.tileMeta);
 
 // ---- render scheduling ----
 // Defined before the first-paint calls at the bottom of this section, because

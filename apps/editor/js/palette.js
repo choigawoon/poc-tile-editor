@@ -94,6 +94,18 @@ export function renderPalette() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
   }
 
+  // metadata markers: a dot on any tile carrying type metadata (red = solid)
+  if (ts.tiles) {
+    for (const key of Object.keys(ts.tiles)) {
+      const idx = Number(key);
+      const col = idx % ts.columns, row = Math.floor(idx / ts.columns);
+      const cx = (ts.margin + col * (ts.tileWidth + ts.spacing) + ts.tileWidth) * s - 4;
+      const cy = (ts.margin + row * (ts.tileHeight + ts.spacing)) * s + 4;
+      ctx.fillStyle = ts.tiles[key].solid ? '#ff5d5d' : '#4ec9ff';
+      ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
   // selection highlight
   const sel = state.ui.selection;
   if (sel && sel.tilesetId === ts.id) {

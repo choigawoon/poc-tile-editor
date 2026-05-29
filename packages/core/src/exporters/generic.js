@@ -23,6 +23,8 @@ export function exportGeneric(project) {
       columns: ts.columns,
       tileCount: ts.tileCount,
       firstId: ts.firstgid,
+      // Type-level metadata, keyed by local tile index (omitted when empty).
+      ...(hasKeys(ts.tiles) ? { tiles: ts.tiles } : {}),
     })),
     layers: project.layers.map((l) => ({
       name: l.name,
@@ -31,8 +33,14 @@ export function exportGeneric(project) {
       // 2D array (rows of columns) for readability
       data: to2D(l.data, project.mapWidth),
     })),
+    // Instance-level objects, sparse and keyed by cell (omitted when empty).
+    ...(project.objects && project.objects.length ? { objects: project.objects } : {}),
   };
   return { filename: `${slug(project.name)}.json`, content: JSON.stringify(data, null, 2) };
+}
+
+function hasKeys(o) {
+  return o && typeof o === 'object' && Object.keys(o).length > 0;
 }
 
 function to2D(flat, w) {
